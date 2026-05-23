@@ -40,6 +40,8 @@ public:
   Sprite(const SpriteSheet *, SDL_FRect coords, SDL_FRect dest);
 
   SDL_FRect dest; // where on the screen
+  float scaleX = 1.0f;
+  float scaleY = 1.0f;
 
   void draw(SDL_Renderer *) const;
 

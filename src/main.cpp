@@ -39,12 +39,14 @@ int main(void) {
   SDL_Window *window;
   SDL_Renderer *renderer;
 
-  success =
-      SDL_CreateWindowAndRenderer("SandboxDL", 800, 600, 0, &window, &renderer);
+  success = SDL_CreateWindowAndRenderer("SandboxDL", 1920, 1080, 0, &window,
+                                        &renderer);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
   }
 
+  SDL_SetRenderLogicalPresentation(renderer, 800, 450,
+                                   SDL_LOGICAL_PRESENTATION_LETTERBOX);
   SDL_GPUDevice *gpu = SDL_GetGPURendererDevice(renderer);
   auto gpuDriver = SDL_GetGPUDeviceDriver(gpu);
   if (!gpuDriver) {
@@ -59,6 +61,12 @@ int main(void) {
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
   Sprites::Sprite bumper = sheet.getSprite("blue-bumper");
+  Sprites::Sprite ball = sheet.getSprite("purple-ball");
+
+  ball.scaleX = 5;
+  ball.scaleY = 5;
+  ball.dest.x = 100;
+  ball.dest.y = 100;
 
   bool running = true;
   while (running) {
@@ -70,7 +78,12 @@ int main(void) {
       }
 
       if (event.type == SDL_EVENT_MOUSE_MOTION) {
+        float lx, ly;
+        SDL_RenderCoordinatesFromWindow(renderer, event.motion.x,
+                                        event.motion.y, &lx, &ly);
         currentMouseMotion = event.motion;
+        currentMouseMotion.x = lx;
+        currentMouseMotion.y = ly;
       }
     }
 
@@ -82,6 +95,7 @@ int main(void) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
+    ball.draw(renderer);
     bumper.draw(renderer);
 
     SDL_RenderPresent(renderer);

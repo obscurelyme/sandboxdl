@@ -53,6 +53,7 @@ SpriteSheet SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
       std::filesystem::path(SDL_GetBasePath()) / "assets" / "sprites" / src;
   SDL_Surface *surface = SDL_LoadPNG(textureAssetPath.string().c_str());
   SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
   SDL_DestroySurface(surface);
 
   std::unordered_map<std::string, SDL_FRect> frames{};
@@ -102,6 +103,8 @@ Sprite::Sprite(const SpriteSheet *sheet, SDL_FRect coords, SDL_FRect dest)
     : sheet(sheet), frame(coords), dest(dest) {}
 
 void Sprite::draw(SDL_Renderer *renderer) const {
+  // SDL_SetRenderScale(renderer, scaleX, scaleY);
   SDL_RenderTexture(renderer, sheet->getTexture(), &frame, &dest);
+  SDL_SetRenderScale(renderer, 1, 1);
 }
 } // namespace Sprites
