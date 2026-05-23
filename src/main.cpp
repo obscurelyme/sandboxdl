@@ -1,4 +1,5 @@
 #include "logging/handler.hpp"
+#include "platform/spritesheet.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
@@ -55,6 +56,10 @@ int main(void) {
   SDL_FRect rect{.x = 0, .y = 0, .w = 25, .h = 25};
   SDL_MouseMotionEvent currentMouseMotion;
 
+  Sprites::SpriteSheet sheet =
+      Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
+  Sprites::Sprite bumper = sheet.getSprite("blue-bumper");
+
   bool running = true;
   while (running) {
     // Poll input
@@ -65,22 +70,20 @@ int main(void) {
       }
 
       if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        SDL_LogInfo(0, "Mouse Position (%.2f, %.2f)", event.motion.x,
-                    event.motion.y);
         currentMouseMotion = event.motion;
       }
     }
 
     // Update game objects
-    rect.x = currentMouseMotion.x;
-    rect.y = currentMouseMotion.y;
+    bumper.dest.x = currentMouseMotion.x;
+    bumper.dest.y = currentMouseMotion.y;
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderRect(renderer, &rect);
+    bumper.draw(renderer);
+
     SDL_RenderPresent(renderer);
   }
 
