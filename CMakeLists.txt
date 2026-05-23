@@ -7,6 +7,10 @@ project(sandboxdl)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 
-add_executable(sandboxdl src/main.cpp)
+add_executable(sandboxdl 
+  src/main.cpp
+  src/logging/handler.cpp
+)
 
+target_include_directories(sandboxdl PRIVATE include)
 target_link_libraries(sandboxdl PRIVATE fmt::fmt SDL3::SDL3)

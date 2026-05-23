@@ -1,0 +1,31 @@
+<spritesheet name="breakout-spritesheet" src="breakout-spritesheet.png">
+  <!-- Pills are 32 pixels wide by 16 pixels in height. Each pill is separated by 8 pixels in the x-axis and 4 pixels in the y-axis-->
+  <sprite name="blue-pill" x="8" y="8" w="32" h="16" />
+  <sprite name="green-pill" x="8" y="28" w="32" h="16" />
+  <sprite name="red-pill" x="8" y="48" w="32" h="16" />
+  <sprite name="purple-pill" x="8" y="68" w="32" h="16" />
+  <sprite name="gold-pill" x="8" y="88" w="32" h="16" />
+  <sprite name="black-pill" x="8" y="108" w="32" h="16" />
+  <sprite name="bronze-pill" x="8" y="128" w="32" h="16" />
+
+  <!-- Balls start at coords (48, 136) and they are separated by 1 pixel in the y-axis -->
+  <sprite name="blue-ball" x="48" y="136" w="8" h="8" />
+  <sprite name="green-ball" x="57" y="136" w="8" h="8" />
+  <sprite name="red-ball" x="66" y="136" w="8" h="8" />
+  <sprite name="purple-ball" x="75" y="136" w="8" h="8" />
+  <sprite name="gold-ball" x="84" y="136" w="8" h="8" />
+  <sprite name="black-ball" x="93" y="136" w="8" h="8" />
+  <sprite name="bronze-ball" x="102" y="136" w="8" h="8" />
+
+  <!-- Hearts start at coords (120, 135) and will only use one of them for this project -->
+  <sprite name="heart" x="120" y="135" w="10" h="9" />
+
+  <!-- Bumpers start at coords (8, 151) 4 pixels x-axis separation and y-axis separation -->
+  <sprite name="blue-bumper" x="8" y="151" w="64" h="20" />
+  <sprite name="green-bumper" x="8" y="175" w="64" h="20" />
+  <sprite name="red-bumper" x="76" y="151" w="64" h="20" />
+  <sprite name="purple-bumper" x="76" y="175" w="64" h="20" />
+  <sprite name="gold-bumper" x="144" y="151" w="64" h="20" />
+  <sprite name="black-bumper" x="144" y="175" w="64" h="20" />
+  <sprite name="bronze-bumper" x="212" y="151" w="64" h="20" />
+</spritesheet>

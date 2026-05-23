@@ -1,45 +1,14 @@
+#include "logging/handler.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
-#include <fmt/base.h>
-#include <fmt/format.h>
-
-void SDL_LogHandler(void *userdata, int category, SDL_LogPriority priority,
-                    const char *message) {
-  switch (priority) {
-  case SDL_LOG_PRIORITY_CRITICAL:
-    fmt::println("[SDL][CRITICAL] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_DEBUG:
-    fmt::println("[SDL][DEBUG] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_WARN:
-    fmt::println("[SDL][WARN] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_ERROR:
-    fmt::println("[SDL][ERROR] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_INFO:
-    fmt::println("[SDL][INFO] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_TRACE:
-    fmt::println("[SDL][TRACE] -- {}", message);
-    return;
-  case SDL_LOG_PRIORITY_VERBOSE:
-    fmt::println("[SDL][VERBOSE] -- {}", message);
-    return;
-  default:
-    fmt::println("[SDL][Unknown] -- {}", message);
-  }
-}
 
 int main(void) {
-  SDL_SetLogOutputFunction(SDL_LogHandler, nullptr);
+  SDL_SetLogOutputFunction(Logging::Handler, nullptr);
 
   bool success;
 
