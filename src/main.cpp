@@ -83,14 +83,36 @@ int main(void) {
     SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
   }
 
+  SDL_FRect rect{.x = 0, .y = 0, .w = 25, .h = 25};
+  SDL_MouseMotionEvent currentMouseMotion;
+
   bool running = true;
   while (running) {
+    // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
       }
+
+      if (event.type == SDL_EVENT_MOUSE_MOTION) {
+        SDL_LogInfo(0, "Mouse Position (%.2f, %.2f)", event.motion.x,
+                    event.motion.y);
+        currentMouseMotion = event.motion;
+      }
     }
+
+    // Update game objects
+    rect.x = currentMouseMotion.x;
+    rect.y = currentMouseMotion.y;
+
+    // Render frame
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderRect(renderer, &rect);
+    SDL_RenderPresent(renderer);
   }
 
   SDL_LogInfo(0, "Closing application");
