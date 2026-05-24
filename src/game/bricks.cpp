@@ -9,7 +9,11 @@ std::array<Bricks, 102> Bricks::bricks{};
 
 Bricks::Bricks() : hidden(false), position({.x = 0, .y = 0}) {}
 
-void Bricks::draw(SDL_Renderer *renderer) const { sprite.draw(renderer); }
+void Bricks::draw(SDL_Renderer *renderer) const {
+  sprite.draw(renderer);
+  SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+  SDL_RenderRect(renderer, &sprite.dest);
+}
 
 void Bricks::Create(const Sprites::SpriteSheet *sheet) {
   const int MAX_BRICKS_COLUMNS = 17;

@@ -15,7 +15,7 @@ public:
 
 private:
   Sprites::Sprite sprite;
-  float speed = 50;
+  float speed = 35;
   SDL_FPoint position;
   SDL_FRect bounds;
 };
