@@ -15,7 +15,7 @@ public:
 
 private:
   Sprites::Sprite sprite;
-  float speed = 100;
+  float speed = 50;
 };
 
 } // namespace Game

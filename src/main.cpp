@@ -1,15 +1,16 @@
 #include "game/bricks.hpp"
 #include "game/bumper.hpp"
 #include "logging/handler.hpp"
+#include "platform/debug-gui.hpp"
 #include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
-#include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 
 int main(void) {
@@ -22,6 +23,9 @@ int main(void) {
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
   }
+  SDL_SetLogPriorities(SDL_LOG_PRIORITY_TRACE);
+#else
+  SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
 #endif
   success = SDL_SetHint(SDL_HINT_RENDER_DRIVER, "gpu");
   if (!success) {
@@ -72,9 +76,11 @@ int main(void) {
   bumper.position.y = 400;
   bumper.position.x = 800.f / 2;
 
+  DebugGui::FPS fpsCounter{};
   uint64_t lastTick = SDL_GetTicks();
   bool running = true;
   while (running) {
+    fpsCounter.update();
     uint64_t now = SDL_GetTicks();
     float deltaTime = (now - lastTick) / 1000.0f; // seconds
     lastTick = now;
@@ -88,6 +94,13 @@ int main(void) {
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
         continue;
+      }
+
+      // TODO: come up with a more decoupled way of handling this...
+      if (event.type == SDL_EVENT_KEY_DOWN) {
+        if (event.key.scancode == SDL_SCANCODE_SLASH) {
+          fpsCounter.tuiReport();
+        }
       }
 
       Input::Manager::HandleInputEvent(renderer, event);

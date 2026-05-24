@@ -10,10 +10,21 @@ namespace Input {
 
 class KeyboardState {
 public:
+  /**
+   * Checks if a key is currently pressed down
+   */
   bool isDown(SDL_Scancode key) const { return current[key]; }
+
+  /**
+   * Checks if a key was pressed in the current frame
+   */
   bool wasPressed(SDL_Scancode key) const {
     return !previous[key] && current[key];
   }
+
+  /**
+   * Checks if a key was released in the current frame
+   */
   bool wasReleased(SDL_Scancode key) const {
     return previous[key] && !current[key];
   }
@@ -24,17 +35,16 @@ public:
     }
   }
 
-  void swap() {
-    previous = current;
-    current.fill(false);
-  }
+  void swap() { previous = current; }
 
   bool isShiftModifierDown() const {
     return (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
   };
+
   bool isCtrlModifierDown() const {
     return (SDL_GetModState() & SDL_KMOD_CTRL) != 0;
   };
+
   bool isAltModifierDown() const {
     return (SDL_GetModState() & SDL_KMOD_ALT) != 0;
   };
@@ -76,10 +86,7 @@ public:
                                     &renderCoords.x, &renderCoords.y);
   }
 
-  void swap() {
-    previous = current;
-    current.fill(false);
-  }
+  void swap() { previous = current; }
 
   SDL_FPoint mouseWindowPosition() const { return windowCoords; }
 
