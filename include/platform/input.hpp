@@ -37,6 +37,11 @@ public:
 
   void swap() { previous = current; }
 
+  void reset() {
+    current.fill(false);
+    previous.fill(false);
+  }
+
   bool isShiftModifierDown() const {
     return (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
   };
@@ -88,6 +93,11 @@ public:
 
   void swap() { previous = current; }
 
+  void reset() {
+    current.fill(false);
+    previous.fill(false);
+  }
+
   SDL_FPoint mouseWindowPosition() const { return windowCoords; }
 
   SDL_FPoint mouseRenderPosition() const { return renderCoords; }
@@ -103,6 +113,7 @@ class Manager {
 public:
   static void Swap();
   static void HandleInputEvent(SDL_Renderer *renderer, const SDL_Event &event);
+  static void Reset();
 
   static const KeyboardState &Keyboard();
   static const MouseState &Mouse();

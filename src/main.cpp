@@ -84,10 +84,12 @@ int main(void) {
   DebugGui::FPS fpsCounter{};
   uint64_t lastTick = SDL_GetTicks();
   bool running = true;
+  bool paused = false;
   while (running) {
     fpsCounter.update();
     uint64_t now = SDL_GetTicks();
-    float deltaTime = (now - lastTick) / 1000.0f; // seconds
+    float deltaTime =
+        SDL_min((now - lastTick) / 1000.0f, 0.05f); // capped at 50ms
     lastTick = now;
 
     // Clear previous frame input
@@ -108,12 +110,24 @@ int main(void) {
         }
       }
 
+      if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+        paused = true;
+        Input::Manager::Reset();
+      }
+
+      if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
+        lastTick = SDL_GetTicks();
+        paused = false;
+      }
+
       Input::Manager::HandleInputEvent(renderer, event);
     }
 
     // Update game objects
-    bumper.update(deltaTime);
-    ball.update(deltaTime, bumper.collider());
+    if (!paused) {
+      bumper.update(deltaTime);
+      ball.update(deltaTime, bumper.collider());
+    }
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);

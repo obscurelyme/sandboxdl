@@ -30,4 +30,9 @@ void Manager::HandleInputEvent(SDL_Renderer *renderer, const SDL_Event &event) {
     return;
   }
 }
+
+void Manager::Reset() {
+  keyboardState.reset();
+  mouseState.reset();
+}
 } // namespace Input
