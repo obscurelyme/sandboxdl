@@ -12,6 +12,8 @@ public:
 
   static void Create(const Sprites::SpriteSheet *sheet);
   static void Draw(SDL_Renderer *renderer);
+  static void CheckCollisions(const SDL_FRect &ballCollider,
+                              SDL_FPoint &direction);
 
 private:
   Sprites::Sprite sprite;

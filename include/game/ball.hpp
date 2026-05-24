@@ -1,23 +1,21 @@
 #pragma once
 
 #include "platform/spritesheet.hpp"
-#include <SDL3/SDL_rect.h>
 
 namespace Game {
-class Bumper {
+class Ball {
 public:
-  Bumper() = delete;
-  explicit Bumper(const Sprites::Sprite &, SDL_FPoint initPosition);
+  Ball(const Sprites::Sprite &sprite, SDL_FPoint initPosition);
 
-  void update(float deltaTime);
+  void update(float deltaTime, const SDL_FRect &bumperCollider);
   void draw(SDL_Renderer *renderer) const;
-  SDL_FRect collider() const;
 
 private:
+  float speed;
   Sprites::Sprite sprite;
-  float speed = 50;
   SDL_FPoint position;
   SDL_FRect bounds;
+  SDL_FRect collider;
+  SDL_FPoint direction;
 };
-
 } // namespace Game

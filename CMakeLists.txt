@@ -16,6 +16,7 @@ add_executable(sandboxdl
   src/game/bricks.cpp
   src/game/bumper.cpp
   src/platform/debug-gui.cpp
+  src/game/ball.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)

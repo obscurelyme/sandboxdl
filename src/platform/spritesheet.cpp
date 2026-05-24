@@ -102,6 +102,10 @@ Sprite SpriteSheet::getSprite(std::string_view name) const {
 Sprite::Sprite(const SpriteSheet *sheet, SDL_FRect coords, SDL_FRect dest)
     : sheet(sheet), frame(coords), dest(dest) {}
 
+float Sprite::width() const { return frame.w; }
+
+float Sprite::height() const { return frame.h; }
+
 void Sprite::draw(SDL_Renderer *renderer) const {
   // SDL_SetRenderScale(renderer, scaleX, scaleY);
   SDL_RenderTexture(renderer, sheet->getTexture(), &frame, &dest);

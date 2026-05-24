@@ -44,6 +44,8 @@ public:
   float scaleX = 1.0f;
   float scaleY = 1.0f;
 
+  float width() const;
+  float height() const;
   void draw(SDL_Renderer *) const;
 
 private:

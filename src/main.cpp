@@ -1,3 +1,4 @@
+#include "game/ball.hpp"
 #include "game/bricks.hpp"
 #include "game/bumper.hpp"
 #include "logging/handler.hpp"
@@ -65,16 +66,20 @@ int main(void) {
 
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
-  Sprites::Sprite ball = sheet.getSprite("gold-ball");
 
   Game::Bricks::Create(&sheet);
-  Game::Bumper bumper{sheet.getSprite("blue-bumper")};
 
-  ball.dest.x = 800.f / 2;
-  ball.dest.y = 300;
+  SDL_FPoint initBumperPosition{
+      .x = 800.f / 2,
+      .y = 400,
+  };
+  Game::Bumper bumper{sheet.getSprite("blue-bumper"), initBumperPosition};
 
-  bumper.position.y = 400;
-  bumper.position.x = 800.f / 2;
+  SDL_FPoint initBallPosition{
+      .x = 800.f / 2,
+      .y = 300,
+  };
+  Game::Ball ball{sheet.getSprite("gold-ball"), initBallPosition};
 
   DebugGui::FPS fpsCounter{};
   uint64_t lastTick = SDL_GetTicks();
@@ -108,6 +113,7 @@ int main(void) {
 
     // Update game objects
     bumper.update(deltaTime);
+    ball.update(deltaTime, bumper.collider());
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);

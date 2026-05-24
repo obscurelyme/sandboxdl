@@ -2,7 +2,8 @@
 #include "platform/input.hpp"
 
 namespace Game {
-Bumper::Bumper(const Sprites::Sprite &sprite) : sprite(sprite) {}
+Bumper::Bumper(const Sprites::Sprite &sprite, SDL_FPoint initPosition)
+    : sprite(sprite), position(initPosition) {}
 
 void Bumper::update(float deltaTime) {
   bool moveLeft = Input::Manager::Keyboard().isDown(SDL_SCANCODE_A) ||
@@ -23,4 +24,6 @@ void Bumper::update(float deltaTime) {
 }
 
 void Bumper::draw(SDL_Renderer *renderer) const { sprite.draw(renderer); }
+
+SDL_FRect Bumper::collider() const { return sprite.dest; }
 } // namespace Game

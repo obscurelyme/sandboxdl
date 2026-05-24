@@ -44,9 +44,21 @@ void Bricks::Create(const Sprites::SpriteSheet *sheet) {
 }
 
 void Bricks::Draw(SDL_Renderer *renderer) {
-  for (Bricks b : bricks) {
+  for (Bricks &b : bricks) {
     if (!b.hidden) {
       b.draw(renderer);
+    }
+  }
+}
+
+void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
+                             SDL_FPoint &ballDirection) {
+  for (Bricks &b : bricks) {
+    if (!b.hidden &&
+        SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
+      b.hidden = true;
+      ballDirection.y = -ballDirection.y;
+      break;
     }
   }
 }
