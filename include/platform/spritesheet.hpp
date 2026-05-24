@@ -37,6 +37,7 @@ private:
 
 class Sprite {
 public:
+  Sprite() = default;
   Sprite(const SpriteSheet *, SDL_FRect coords, SDL_FRect dest);
 
   SDL_FRect dest; // where on the screen

@@ -1,6 +1,9 @@
+#include "game/bricks.hpp"
+#include "game/bumper.hpp"
 #include "logging/handler.hpp"
 #include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
@@ -58,16 +61,24 @@ int main(void) {
 
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
-  Sprites::Sprite bumper = sheet.getSprite("blue-bumper");
-  Sprites::Sprite ball = sheet.getSprite("purple-ball");
+  Sprites::Sprite ball = sheet.getSprite("gold-ball");
 
-  ball.scaleX = 5;
-  ball.scaleY = 5;
-  ball.dest.x = 100;
-  ball.dest.y = 100;
+  Game::Bricks::Create(&sheet);
+  Game::Bumper bumper{sheet.getSprite("blue-bumper")};
 
+  ball.dest.x = 800.f / 2;
+  ball.dest.y = 300;
+
+  bumper.position.y = 400;
+  bumper.position.x = 800.f / 2;
+
+  uint64_t lastTick = SDL_GetTicks();
   bool running = true;
   while (running) {
+    uint64_t now = SDL_GetTicks();
+    float deltaTime = (now - lastTick) / 1000.0f; // seconds
+    lastTick = now;
+
     // Clear previous frame input
     Input::Manager::Swap();
 
@@ -83,8 +94,7 @@ int main(void) {
     }
 
     // Update game objects
-    bumper.dest.x = Input::Manager::Mouse().mouseRenderPosition().x;
-    bumper.dest.y = Input::Manager::Mouse().mouseRenderPosition().y;
+    bumper.update(deltaTime);
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -92,6 +102,7 @@ int main(void) {
 
     ball.draw(renderer);
     bumper.draw(renderer);
+    Game::Bricks::Draw(renderer);
 
     SDL_RenderPresent(renderer);
   }

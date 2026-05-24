@@ -13,6 +13,8 @@ add_executable(sandboxdl
   src/logging/handler.cpp
   src/platform/spritesheet.cpp
   src/platform/input.cpp
+  src/game/bricks.cpp
+  src/game/bumper.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)
