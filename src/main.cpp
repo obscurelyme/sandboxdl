@@ -1,4 +1,5 @@
 #include "logging/handler.hpp"
+#include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
@@ -55,9 +56,6 @@ int main(void) {
     SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
   }
 
-  SDL_FRect rect{.x = 0, .y = 0, .w = 25, .h = 25};
-  SDL_MouseMotionEvent currentMouseMotion;
-
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
   Sprites::Sprite bumper = sheet.getSprite("blue-bumper");
@@ -70,26 +68,23 @@ int main(void) {
 
   bool running = true;
   while (running) {
+    // Clear previous frame input
+    Input::Manager::Swap();
+
     // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
+        continue;
       }
 
-      if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        float lx, ly;
-        SDL_RenderCoordinatesFromWindow(renderer, event.motion.x,
-                                        event.motion.y, &lx, &ly);
-        currentMouseMotion = event.motion;
-        currentMouseMotion.x = lx;
-        currentMouseMotion.y = ly;
-      }
+      Input::Manager::HandleInputEvent(renderer, event);
     }
 
     // Update game objects
-    bumper.dest.x = currentMouseMotion.x;
-    bumper.dest.y = currentMouseMotion.y;
+    bumper.dest.x = Input::Manager::Mouse().mouseRenderPosition().x;
+    bumper.dest.y = Input::Manager::Mouse().mouseRenderPosition().y;
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);

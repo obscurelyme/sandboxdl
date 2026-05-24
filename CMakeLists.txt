@@ -12,6 +12,7 @@ add_executable(sandboxdl
   src/main.cpp
   src/logging/handler.cpp
   src/platform/spritesheet.cpp
+  src/platform/input.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)
