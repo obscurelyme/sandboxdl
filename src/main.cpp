@@ -30,9 +30,10 @@ void drawBackground(Sprites::Sprite &sprite, SDL_Renderer *renderer) {
 }
 
 void drawHearts(int numLives, Sprites::Sprite &sprite, SDL_Renderer *renderer) {
-  const float PADDING = 16;
+  const float PADDING = 4;
+
   for (int i = 0; i < numLives; i++) {
-    sprite.dest.x = 750 - (i * sprite.width());
+    sprite.dest.x = 750 - (i * (sprite.width() + PADDING));
     sprite.draw(renderer);
   }
 }
@@ -93,6 +94,8 @@ int main(void) {
   backgroundBrick.colorMod(80, 80, 80);
 
   Sprites::Sprite heart = sheet.getSprite("heart");
+  heart.scaleX = 1.5f;
+  heart.scaleY = 1.5f;
   heart.dest.y = 450 - heart.height() - 10;
   Game::Bricks::Create(&sheet);
 

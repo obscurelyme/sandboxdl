@@ -103,17 +103,17 @@ Sprite::Sprite(const SpriteSheet *sheet, SDL_FRect coords, SDL_FRect dest)
     : sheet(sheet), frame(coords), dest(dest), r(255), g(255), b(255),
       alpha(255) {}
 
-float Sprite::width() const { return frame.w; }
+float Sprite::width() const { return frame.w * scaleX; }
 
-float Sprite::height() const { return frame.h; }
+float Sprite::height() const { return frame.h * scaleY; }
 
 void Sprite::draw(SDL_Renderer *renderer) const {
   SDL_SetTextureAlphaMod(sheet->getTexture(), alpha);
   SDL_SetTextureColorMod(sheet->getTexture(), r, g, b);
 
-  SDL_RenderTexture(renderer, sheet->getTexture(), &frame, &dest);
+  SDL_FRect scaledDest = {dest.x, dest.y, dest.w * scaleX, dest.h * scaleY};
+  SDL_RenderTexture(renderer, sheet->getTexture(), &frame, &scaledDest);
 
-  SDL_SetRenderScale(renderer, 1, 1);
   SDL_SetTextureAlphaMod(sheet->getTexture(), 255);
   SDL_SetTextureColorMod(sheet->getTexture(), 255, 255, 255);
 }
