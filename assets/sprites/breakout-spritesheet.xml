@@ -28,4 +28,6 @@
   <sprite name="gold-bumper" x="144" y="151" w="64" h="20" />
   <sprite name="black-bumper" x="144" y="175" w="64" h="20" />
   <sprite name="bronze-bumper" x="212" y="151" w="64" h="20" />
+
+  <sprite name="background-brick" x="224" y="112" w="16" h="16" />
 </spritesheet>

@@ -80,7 +80,8 @@ void Ball::update(float deltaTime, const SDL_FRect &bumperCollider) {
 
 void Ball::draw(SDL_Renderer *renderer) const {
   sprite.draw(renderer);
-  SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-  SDL_RenderRect(renderer, &sprite.dest);
+  // TODO: relocate this to a dedicated collider class
+  // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+  // SDL_RenderRect(renderer, &sprite.dest);
 }
 } // namespace Game

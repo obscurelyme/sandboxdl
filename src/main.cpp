@@ -14,6 +14,21 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 
+void drawBackground(Sprites::Sprite &sprite, SDL_Renderer *renderer) {
+  float columns = (800 / sprite.width()) + 1;
+  float rows = 450 / sprite.height();
+
+  for (int i = 0; i < rows; i++) {
+    float offsetX = i % 2 == 0 ? 0 : sprite.width() * 0.5f;
+
+    for (int j = 0; j < columns; j++) {
+      sprite.dest.x = ((float)j * sprite.width()) - offsetX;
+      sprite.dest.y = (float)i * sprite.height();
+      sprite.draw(renderer);
+    }
+  }
+}
+
 int main(void) {
   SDL_SetLogOutputFunction(Logging::Handler, nullptr);
 
@@ -66,6 +81,8 @@ int main(void) {
 
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
+  Sprites::Sprite backgroundBrick = sheet.getSprite("background-brick");
+  backgroundBrick.colorMod(80, 80, 80);
 
   Game::Bricks::Create(&sheet);
 
@@ -133,6 +150,7 @@ int main(void) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
+    drawBackground(backgroundBrick, renderer);
     ball.draw(renderer);
     bumper.draw(renderer);
     Game::Bricks::Draw(renderer);

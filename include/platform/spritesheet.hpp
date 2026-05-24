@@ -46,11 +46,17 @@ public:
 
   float width() const;
   float height() const;
+  void colorMod(float red, float green, float blue);
+  void alphaMod(float alpha);
   void draw(SDL_Renderer *) const;
 
 private:
   const SpriteSheet *sheet;
   SDL_FRect frame;
+  int alpha;
+  int r;
+  int g;
+  int b;
 };
 
 } // namespace Sprites

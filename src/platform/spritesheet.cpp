@@ -100,15 +100,29 @@ Sprite SpriteSheet::getSprite(std::string_view name) const {
 }
 
 Sprite::Sprite(const SpriteSheet *sheet, SDL_FRect coords, SDL_FRect dest)
-    : sheet(sheet), frame(coords), dest(dest) {}
+    : sheet(sheet), frame(coords), dest(dest), r(255), g(255), b(255),
+      alpha(255) {}
 
 float Sprite::width() const { return frame.w; }
 
 float Sprite::height() const { return frame.h; }
 
 void Sprite::draw(SDL_Renderer *renderer) const {
-  // SDL_SetRenderScale(renderer, scaleX, scaleY);
+  SDL_SetTextureAlphaMod(sheet->getTexture(), alpha);
+  SDL_SetTextureColorMod(sheet->getTexture(), r, g, b);
+
   SDL_RenderTexture(renderer, sheet->getTexture(), &frame, &dest);
+
   SDL_SetRenderScale(renderer, 1, 1);
+  SDL_SetTextureAlphaMod(sheet->getTexture(), 255);
+  SDL_SetTextureColorMod(sheet->getTexture(), 255, 255, 255);
 }
+
+void Sprite::colorMod(float red, float green, float blue) {
+  r = SDL_clamp(red, 0, 255);
+  g = SDL_clamp(green, 0, 255);
+  b = SDL_clamp(blue, 0, 255);
+}
+
+void Sprite::alphaMod(float a) { alpha = SDL_clamp(a, 0, 255); }
 } // namespace Sprites
