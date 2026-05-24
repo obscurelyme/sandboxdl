@@ -13,7 +13,7 @@ public:
   static void Create(const Sprites::SpriteSheet *sheet);
   static void Draw(SDL_Renderer *renderer);
   static void CheckCollisions(const SDL_FRect &ballCollider,
-                              SDL_FPoint &direction);
+                              SDL_FPoint &ballDirection, float &ballSpeed);
 
 private:
   Sprites::Sprite sprite;

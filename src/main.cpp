@@ -29,6 +29,14 @@ void drawBackground(Sprites::Sprite &sprite, SDL_Renderer *renderer) {
   }
 }
 
+void drawHearts(int numLives, Sprites::Sprite &sprite, SDL_Renderer *renderer) {
+  const float PADDING = 16;
+  for (int i = 0; i < numLives; i++) {
+    sprite.dest.x = 750 - (i * sprite.width());
+    sprite.draw(renderer);
+  }
+}
+
 int main(void) {
   SDL_SetLogOutputFunction(Logging::Handler, nullptr);
 
@@ -84,6 +92,8 @@ int main(void) {
   Sprites::Sprite backgroundBrick = sheet.getSprite("background-brick");
   backgroundBrick.colorMod(80, 80, 80);
 
+  Sprites::Sprite heart = sheet.getSprite("heart");
+  heart.dest.y = 450 - heart.height() - 10;
   Game::Bricks::Create(&sheet);
 
   SDL_FPoint initBumperPosition{
@@ -151,6 +161,7 @@ int main(void) {
     SDL_RenderClear(renderer);
 
     drawBackground(backgroundBrick, renderer);
+    drawHearts(ball.getLives(), heart, renderer);
     ball.draw(renderer);
     bumper.draw(renderer);
     Game::Bricks::Draw(renderer);

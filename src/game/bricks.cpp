@@ -1,5 +1,6 @@
 #include "game/bricks.hpp"
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_stdinc.h>
 
 namespace Game {
 std::array<std::string, 6> Bricks::rowColors{"bronze-pill", "green-pill",
@@ -57,12 +58,13 @@ void Bricks::Draw(SDL_Renderer *renderer) {
 }
 
 void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
-                             SDL_FPoint &ballDirection) {
+                             SDL_FPoint &ballDirection, float &ballSpeed) {
   for (Bricks &b : bricks) {
     if (!b.hidden &&
         SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
       b.hidden = true;
       ballDirection.y = -ballDirection.y;
+      ballSpeed = SDL_min(400.0f, ballSpeed * 1.1f);
       break;
     }
   }
