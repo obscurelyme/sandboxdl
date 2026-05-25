@@ -5,6 +5,7 @@
 #include "platform/debug-gui.hpp"
 #include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
+#include "platform/ui.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_gpu.h>
@@ -39,6 +40,7 @@ void drawHearts(int numLives, Sprites::Sprite &sprite, SDL_Renderer *renderer) {
 }
 
 int main(void) {
+  /* #region Init Logic */
   SDL_SetLogOutputFunction(Logging::Handler, nullptr);
 
   bool success;
@@ -68,7 +70,9 @@ int main(void) {
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
   }
+  /* #endregion */
 
+  /* #region Window and Renderer Creation */
   SDL_Window *window;
   SDL_Renderer *renderer;
 
@@ -87,9 +91,23 @@ int main(void) {
   } else {
     SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
   }
+  /* #endregion */
 
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
+
+  /* #region UI */
+  UI::Layer uiLayer;
+  Sprites::Sprite uiBtnSprite = sheet.getSprite("ui-button");
+  auto *btn = uiLayer.add<UI::Button>(
+      SDL_FRect{.x = 0, .y = 0, .w = 48, .h = 16}, "Play", &uiBtnSprite);
+  btn->onPressed = [] { SDL_LogInfo(0, "Button was Pressed!"); };
+  btn->onHover = [] { SDL_LogInfo(0, "Button was Hovered!"); };
+  btn->onBlur = [] { SDL_LogInfo(0, "Button was Blurred!"); };
+  btn->onFocus = [] { SDL_LogInfo(0, "Button was Focused!"); };
+  /* #endregion */
+
+  /* #region Scene */
   Sprites::Sprite backgroundBrick = sheet.getSprite("background-brick");
   backgroundBrick.colorMod(40, 40, 40);
 
@@ -110,11 +128,13 @@ int main(void) {
       .y = 300,
   };
   Game::Ball ball{sheet.getSprite("gold-ball"), initBallPosition};
+  /* #endregion */
 
   DebugGui::FPS fpsCounter{};
   uint64_t lastTick = SDL_GetTicks();
   bool running = true;
   bool paused = false;
+  UI::InputContext inputCtx;
   while (running) {
     fpsCounter.update();
     uint64_t now = SDL_GetTicks();
@@ -151,7 +171,11 @@ int main(void) {
       }
 
       Input::Manager::HandleInputEvent(renderer, event);
+      inputCtx = UI::SnapshotCtx();
     }
+
+    // UI-Layer Update
+    uiLayer.update(inputCtx);
 
     // Update game objects
     if (!paused) {
@@ -168,6 +192,9 @@ int main(void) {
     ball.draw(renderer);
     bumper.draw(renderer);
     Game::Bricks::Draw(renderer);
+
+    // UI-Layer Draw
+    uiLayer.draw(renderer);
 
     SDL_RenderPresent(renderer);
   }
