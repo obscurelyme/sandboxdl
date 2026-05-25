@@ -91,7 +91,7 @@ int main(void) {
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
   Sprites::Sprite backgroundBrick = sheet.getSprite("background-brick");
-  backgroundBrick.colorMod(80, 80, 80);
+  backgroundBrick.colorMod(40, 40, 40);
 
   Sprites::Sprite heart = sheet.getSprite("heart");
   heart.scaleX = 1.5f;
