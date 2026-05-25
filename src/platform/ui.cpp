@@ -71,5 +71,29 @@ void Layer::clear() { widgets.clear(); }
 Button::Button(SDL_FRect bounds, std::string label, Sprites::Sprite *sprite)
     : Widget(bounds), label(label), sprite(sprite) {}
 
-void Button::draw(SDL_Renderer *renderer) { sprite->draw(renderer); }
+void Button::draw(SDL_Renderer *renderer) const { sprite->draw(renderer); }
+
+Text::Text(std::string text, std::shared_ptr<Font> font)
+    : Widget({}), text(text), font(font), texture(nullptr) {
+  if (font && !text.empty()) {
+    texture = font->renderText(text, nullptr);
+  }
+}
+
+void Text::update(const InputContext &ctx) {
+  // no-op
+}
+
+void Text::setText(std::string text) {
+  texture = font->renderText(text, nullptr);
+}
+
+void Text::draw(SDL_Renderer *renderer) const {
+  SDL_FRect dest;
+  SDL_GetTextureSize(texture, &dest.w, &dest.h);
+  dest.x = 0;
+  dest.y = 0;
+
+  SDL_RenderTexture(renderer, texture, nullptr, &dest);
+}
 } // namespace UI

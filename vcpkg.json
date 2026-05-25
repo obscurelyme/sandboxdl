@@ -2,6 +2,7 @@
   "dependencies": [
     "fmt",
     "sdl3",
-    "tinyxml2"
+    "tinyxml2",
+    "sdl3-ttf"
   ]
 }

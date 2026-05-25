@@ -7,6 +7,7 @@ project(sandboxdl)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_ttf CONFIG REQUIRED)
 
 add_executable(sandboxdl 
   src/main.cpp
@@ -22,4 +23,11 @@ add_executable(sandboxdl
 )
 
 target_include_directories(sandboxdl PRIVATE include)
-target_link_libraries(sandboxdl PRIVATE tinyxml2::tinyxml2 fmt::fmt SDL3::SDL3)
+target_link_libraries(
+  sandboxdl 
+  PRIVATE 
+  tinyxml2::tinyxml2 
+  fmt::fmt 
+  SDL3::SDL3 
+  SDL3_ttf::SDL3_ttf
+)

@@ -5,6 +5,7 @@
 #include "platform/debug-gui.hpp"
 #include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
+#include "platform/text.hpp"
 #include "platform/ui.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
@@ -49,6 +50,7 @@ int main(void) {
   success = SDL_SetHint(SDL_HINT_RENDER_GPU_DEBUG, "1");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
+    return 1;
   }
   SDL_SetLogPriorities(SDL_LOG_PRIORITY_TRACE);
 #else
@@ -57,6 +59,7 @@ int main(void) {
   success = SDL_SetHint(SDL_HINT_RENDER_DRIVER, "gpu");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
+    return 1;
   }
 
   SDL_LogInfo(0, "Starting application");
@@ -64,11 +67,18 @@ int main(void) {
   success = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
+    return 1;
   }
 
   success = SDL_SetAppMetadata("SandboxDL", "0.0.1", "com.obscure.sandboxdl");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
+    return 1;
+  }
+
+  success = UI::FontManager::Init();
+  if (!success) {
+    return 1;
   }
   /* #endregion */
 
@@ -93,6 +103,9 @@ int main(void) {
   }
   /* #endregion */
 
+  UI::FontManager::SetRenderer(renderer);
+  UI::FontManager::LoadFont("Tiny5");
+
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
 
@@ -105,6 +118,7 @@ int main(void) {
   btn->onHover = [] { SDL_LogInfo(0, "Button was Hovered!"); };
   btn->onBlur = [] { SDL_LogInfo(0, "Button was Blurred!"); };
   btn->onFocus = [] { SDL_LogInfo(0, "Button was Focused!"); };
+  auto *txt = uiLayer.add<UI::Text>("Play", UI::FontManager::GetFont("Tiny5"));
   /* #endregion */
 
   /* #region Scene */
@@ -200,6 +214,8 @@ int main(void) {
   }
 
   SDL_LogInfo(0, "Closing application");
+  uiLayer.clear();
+  UI::FontManager::Quit();
   SDL_Quit();
   SDL_LogInfo(0, "Application closed!");
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/spritesheet.hpp"
+#include "platform/text.hpp"
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <functional>
@@ -33,7 +34,7 @@ public:
   virtual ~Widget() = default;
 
   virtual void update(const InputContext &ctx);
-  virtual void draw(SDL_Renderer *renderer) = 0;
+  virtual void draw(SDL_Renderer *renderer) const = 0;
 
   bool containsPoint(SDL_FPoint p) const;
 
@@ -70,10 +71,23 @@ private:
 class Button : public Widget {
 public:
   Button(SDL_FRect bounds, std::string label, Sprites::Sprite *sprite);
-  void draw(SDL_Renderer *renderer) override;
+  void draw(SDL_Renderer *renderer) const override;
 
 private:
   std::string label;
   Sprites::Sprite *sprite;
+};
+
+class Text : public Widget {
+public:
+  Text(std::string text, std::shared_ptr<Font> font);
+  void update(const InputContext &ctx) override;
+  void draw(SDL_Renderer *renderer) const override;
+  void setText(std::string newText);
+
+private:
+  std::string text;
+  std::shared_ptr<Font> font;
+  SDL_Texture *texture;
 };
 } // namespace UI
