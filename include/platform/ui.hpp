@@ -37,6 +37,13 @@ public:
   virtual void draw(SDL_Renderer *renderer) const = 0;
 
   bool containsPoint(SDL_FPoint p) const;
+  virtual void setBounds(SDL_FRect newBounds);
+  SDL_FRect getBounds() const;
+  SDL_FPoint getSize() const { return {bounds.w, bounds.h}; }
+  virtual void setPosition(float x, float y) {
+    bounds.x = x;
+    bounds.y = y;
+  }
 
   std::function<void()> onFocus;
   std::function<void()> onBlur;
@@ -68,19 +75,78 @@ private:
   std::vector<std::unique_ptr<Widget>> widgets;
 };
 
-class Button : public Widget {
+class Text; // Forward Ref
+
+struct TextProps {
+  std::string label;
+  std::string fontName;
+};
+
+struct ButtonProps {
+  SDL_FRect bounds;
+  int paddingX;
+  int paddingY;
+  Sprites::Sprite *sprite;
+};
+
+enum class Align { Start, Center, End };
+
+struct ContainerProps {
+  SDL_FRect bounds;
+  Align hAlign;
+  Align vAlign;
+};
+
+class Backdrop : public Widget {
 public:
-  Button(SDL_FRect bounds, std::string label, Sprites::Sprite *sprite);
+  explicit Backdrop(SDL_Color color);
+  void draw(SDL_Renderer *renderer) const;
+
+private:
+  SDL_Color color;
+};
+
+class Container : public Widget {
+public:
+  explicit Container(const ContainerProps &props);
+
+  template <typename T, typename... Args> T *add(Args &&...args) {
+    static_assert(std::is_base_of_v<Widget, T>,
+                  "T must derive from UI::Widget");
+    children.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    return static_cast<T *>(children.back().get());
+  }
+
+  void update(const InputContext &ctx) override;
   void draw(SDL_Renderer *renderer) const override;
 
 private:
-  std::string label;
+  Align hAlign;
+  Align vAlign;
+  std::vector<std::unique_ptr<Widget>> children;
+
+  void layout();
+};
+
+class Button : public Widget {
+public:
+  Button(const ButtonProps &btnProps, const TextProps &textProps);
+
+  void draw(SDL_Renderer *renderer) const override;
+  void setBounds(SDL_FRect newBounds) override;
+  void setPosition(float x, float y) override;
+
+private:
+  std::shared_ptr<Text> label;
   Sprites::Sprite *sprite;
+  int paddingX;
+  int paddingY;
 };
 
 class Text : public Widget {
 public:
   Text(std::string text, std::shared_ptr<Font> font);
+  Text(SDL_FRect bounds, std::string text, std::shared_ptr<Font> font);
   void update(const InputContext &ctx) override;
   void draw(SDL_Renderer *renderer) const override;
   void setText(std::string newText);

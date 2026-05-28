@@ -8,7 +8,7 @@
 namespace UI {
 class Font {
 public:
-  explicit Font(std::string fontName, SDL_Renderer *renderer);
+  Font(std::string fontName, SDL_Renderer *renderer);
   ~Font();
 
   Font(const Font &) = delete;
@@ -19,8 +19,11 @@ public:
   bool enableSDF();
   bool disableSDF();
   SDL_Texture *renderText(std::string text, SDL_Color *color);
+  SDL_Texture *renderTextFitted(std::string text, SDL_Color *color,
+                                SDL_FRect bounds);
 
 private:
+  float ptSize;
   static SDL_Color defaultColor;
   TTF_Font *ttfFont;
   SDL_Renderer *fontRenderer;

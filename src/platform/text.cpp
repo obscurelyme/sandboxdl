@@ -8,8 +8,8 @@ Font::Font(std::string fontName, SDL_Renderer *renderer)
   std::string fontFilePathWithExt = fontName + ".ttf";
   auto assetPath = std::filesystem::path(SDL_GetBasePath()) / "assets" /
                    "fonts" / fontFilePathWithExt;
-  // TODO: figure out how to have multiple font sizes...
-  ttfFont = TTF_OpenFont(assetPath.string().c_str(), 24);
+  ptSize = 16;
+  ttfFont = TTF_OpenFont(assetPath.string().c_str(), ptSize);
   if (!ttfFont) {
     SDL_LogError(0, "[UI::Font] Unable to load TTF font '%s'. %s",
                  fontName.c_str(), SDL_GetError());
@@ -58,7 +58,19 @@ SDL_Texture *Font::renderText(std::string text, SDL_Color *color) {
   SDL_Surface *surface = TTF_RenderText_Blended(ttfFont, text.c_str(), 0, c);
   SDL_Texture *texture = SDL_CreateTextureFromSurface(fontRenderer, surface);
   SDL_DestroySurface(surface);
+  SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
   return texture;
+}
+
+SDL_Texture *Font::renderTextFitted(std::string text, SDL_Color *color,
+                                    SDL_FRect bounds) {
+  int w, h;
+  TTF_GetStringSize(ttfFont, text.c_str(), 0, &w, &h);
+  float scale = SDL_min(bounds.w / (float)w, bounds.h / (float)h);
+  TTF_SetFontSize(ttfFont, ptSize * scale);
+  SDL_Texture *scaledTexture = renderText(text, color);
+  TTF_SetFontSize(ttfFont, ptSize);
+  return scaledTexture;
 }
 
 SDL_Renderer *FontManager::fontRenderer = nullptr;

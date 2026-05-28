@@ -2,7 +2,9 @@
 #include "game/bricks.hpp"
 #include "game/bumper.hpp"
 #include "logging/handler.hpp"
+#include "platform/audio.hpp"
 #include "platform/debug-gui.hpp"
+#include "platform/events.hpp"
 #include "platform/input.hpp"
 #include "platform/spritesheet.hpp"
 #include "platform/text.hpp"
@@ -109,16 +111,62 @@ int main(void) {
   Sprites::SpriteSheet sheet =
       Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
 
+  Audio::Sound *btnHoverClick = new Audio::Sound("button-hover-click");
+
   /* #region UI */
   UI::Layer uiLayer;
   Sprites::Sprite uiBtnSprite = sheet.getSprite("ui-button");
+  Sprites::Sprite uiBtnSprite2 = sheet.getSprite("ui-button");
+  Sprites::Sprite uiBtnSprite3 = sheet.getSprite("ui-button");
+  uiLayer.add<UI::Backdrop>(SDL_Color{
+      .r = 0,
+      .g = 0,
+      .b = 0,
+      .a = 100,
+  });
   auto *btn = uiLayer.add<UI::Button>(
-      SDL_FRect{.x = 0, .y = 0, .w = 48, .h = 16}, "Play", &uiBtnSprite);
-  btn->onPressed = [] { SDL_LogInfo(0, "Button was Pressed!"); };
-  btn->onHover = [] { SDL_LogInfo(0, "Button was Hovered!"); };
-  btn->onBlur = [] { SDL_LogInfo(0, "Button was Blurred!"); };
-  btn->onFocus = [] { SDL_LogInfo(0, "Button was Focused!"); };
-  auto *txt = uiLayer.add<UI::Text>("Play", UI::FontManager::GetFont("Tiny5"));
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 200, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = &uiBtnSprite,
+      },
+      UI::TextProps{
+          .label = "Play",
+          .fontName = "Tiny5",
+      });
+  auto *creditsBtn = uiLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 240, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = &uiBtnSprite2,
+      },
+      UI::TextProps{
+          .label = "Credits",
+          .fontName = "Tiny5",
+      });
+  auto *quitBtn = uiLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 280, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = &uiBtnSprite3,
+      },
+      UI::TextProps{
+          .label = "Quit",
+          .fontName = "Tiny5",
+      });
+
+  btn->onPressed = [] {};
+  btn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
+  creditsBtn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
+  quitBtn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
+  btn->onBlur = [] {};
+  btn->onFocus = [] {};
+  quitBtn->onPressed = [] {
+    Events::Emit(Events::USER_QUIT_APP, nullptr, nullptr);
+  };
   /* #endregion */
 
   /* #region Scene */
@@ -146,9 +194,9 @@ int main(void) {
 
   DebugGui::FPS fpsCounter{};
   uint64_t lastTick = SDL_GetTicks();
-  bool running = true;
   bool paused = false;
   UI::InputContext inputCtx;
+  bool running = true;
   while (running) {
     fpsCounter.update();
     uint64_t now = SDL_GetTicks();
@@ -162,7 +210,7 @@ int main(void) {
     // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT) {
+      if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
         running = false;
         continue;
       }
@@ -213,6 +261,7 @@ int main(void) {
     SDL_RenderPresent(renderer);
   }
 
+  SDL_free(btnHoverClick);
   SDL_LogInfo(0, "Closing application");
   uiLayer.clear();
   UI::FontManager::Quit();

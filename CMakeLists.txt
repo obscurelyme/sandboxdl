@@ -20,6 +20,7 @@ add_executable(sandboxdl
   src/game/ball.cpp
   src/platform/ui.cpp
   src/platform/text.cpp
+  src/platform/audio.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)

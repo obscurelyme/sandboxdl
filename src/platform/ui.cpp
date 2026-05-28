@@ -54,6 +54,10 @@ void Widget::update(const InputContext &ctx) {
   }
 }
 
+void Widget::setBounds(SDL_FRect newBounds) { bounds = newBounds; }
+
+SDL_FRect Widget::getBounds() const { return bounds; }
+
 void Layer::update(const InputContext &ctx) {
   for (auto &widget : widgets) {
     widget->update(ctx);
@@ -68,10 +72,133 @@ void Layer::draw(SDL_Renderer *renderer) {
 
 void Layer::clear() { widgets.clear(); }
 
-Button::Button(SDL_FRect bounds, std::string label, Sprites::Sprite *sprite)
-    : Widget(bounds), label(label), sprite(sprite) {}
+Backdrop::Backdrop(SDL_Color color)
+    : Widget({.x = 0, .y = 0, .w = 800, .h = 450}), color(color) {}
 
-void Button::draw(SDL_Renderer *renderer) const { sprite->draw(renderer); }
+void Backdrop::draw(SDL_Renderer *renderer) const {
+  Uint8 r, g, b, a;
+  SDL_BlendMode blendMode;
+  SDL_GetRenderDrawBlendMode(renderer, &blendMode);
+  SDL_GetRenderDrawColor(renderer, &r, &g, &b, &a); // cache current draw color
+
+  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_RenderFillRect(renderer, &bounds);
+
+  SDL_SetRenderDrawBlendMode(renderer, blendMode);
+  SDL_SetRenderDrawColor(renderer, r, g, b, a); // reset draw color
+}
+
+Container::Container(const ContainerProps &props) : Widget(props.bounds) {
+  vAlign = props.vAlign;
+  hAlign = props.hAlign;
+}
+
+void Container::layout() {
+  const float gap = 4;
+  float totalH = gap * (children.size() - 1);
+  for (auto &child : children)
+    totalH += child->getSize().y;
+
+  float startY;
+  switch (vAlign) {
+  case Align::Start:
+    startY = bounds.y;
+    break;
+  case Align::Center:
+    startY = bounds.y + (bounds.h - totalH) * 0.5f;
+    break;
+  case Align::End:
+    startY = bounds.y + bounds.h - totalH;
+    break;
+  }
+
+  float curY = startY;
+  for (auto &child : children) {
+    auto size = child->getSize();
+    float x;
+    switch (hAlign) {
+    case Align::Start:
+      x = bounds.x;
+      break;
+    case Align::Center:
+      x = bounds.x + (bounds.w - size.x) * 0.5f;
+      break;
+    case Align::End:
+      x = bounds.x + bounds.w - size.x;
+      break;
+    }
+    child->setPosition(x, curY);
+    curY += size.y + gap;
+  }
+}
+
+void Container::update(const InputContext &ctx) {
+  for (auto &child : children) {
+    layout();
+    child->update(ctx);
+  }
+}
+
+void Container::draw(SDL_Renderer *renderer) const {
+  for (auto &child : children) {
+    child->draw(renderer);
+  }
+}
+
+void Button::setPosition(float x, float y) {
+  bounds.x = x;
+  bounds.y = y;
+  sprite->dest.x = x;
+  sprite->dest.y = y;
+  label->setPosition(x + paddingX, y + paddingY);
+}
+
+void Button::setBounds(SDL_FRect newBounds) {
+  bounds = newBounds;
+
+  sprite->dest.x = bounds.x;
+  sprite->dest.y = bounds.y;
+  sprite->scaleX = bounds.w / sprite->width();
+  sprite->scaleY = bounds.h / sprite->height();
+
+  label->setBounds(SDL_FRect{
+      .x = bounds.x + paddingX,
+      .y = bounds.y + paddingY,
+      .w = bounds.w - paddingX * 2,
+      .h = bounds.h - paddingY * 2,
+  });
+}
+
+Button::Button(const ButtonProps &btnProps, const TextProps &textProps)
+    : Widget(btnProps.bounds), sprite(btnProps.sprite),
+      paddingX(btnProps.paddingX), paddingY(btnProps.paddingY) {
+  sprite->dest.x = bounds.x;
+  sprite->dest.y = bounds.y;
+  sprite->scaleX = bounds.w / sprite->width();
+  sprite->scaleY = bounds.h / sprite->height();
+  label = std::make_shared<Text>(
+      SDL_FRect{
+          .x = bounds.x + paddingX,
+          .y = bounds.y + paddingY,
+          .w = bounds.w - paddingX * 2,
+          .h = bounds.h - paddingY * 2,
+      },
+      textProps.label, FontManager::GetFont(textProps.fontName));
+}
+
+void Button::draw(SDL_Renderer *renderer) const {
+  sprite->draw(renderer);
+  label->draw(renderer);
+}
+
+Text::Text(SDL_FRect bounds, std::string text, std::shared_ptr<Font> font)
+    : Widget(bounds), text(text), font(font) {
+  if (font && !text.empty()) {
+    texture = font->renderTextFitted(text, nullptr, bounds);
+  }
+}
 
 Text::Text(std::string text, std::shared_ptr<Font> font)
     : Widget({}), text(text), font(font), texture(nullptr) {
@@ -84,15 +211,29 @@ void Text::update(const InputContext &ctx) {
   // no-op
 }
 
-void Text::setText(std::string text) {
-  texture = font->renderText(text, nullptr);
+void Text::setText(std::string newText) {
+  text = newText;
+
+  if (bounds.w > 0 && bounds.h > 0) {
+    texture = font->renderTextFitted(text, nullptr, bounds);
+  } else {
+    texture = font->renderText(text, nullptr);
+  }
 }
 
 void Text::draw(SDL_Renderer *renderer) const {
+  float texW, texH;
+  SDL_GetTextureSize(texture, &texW, &texH);
+
   SDL_FRect dest;
-  SDL_GetTextureSize(texture, &dest.w, &dest.h);
-  dest.x = 0;
-  dest.y = 0;
+  if (bounds.w > 0 && bounds.h > 0) {
+    dest.x = bounds.x + (bounds.w - texW) * 0.5f;
+    dest.y = bounds.y + (bounds.h - texH) * 0.5f;
+    dest.w = texW;
+    dest.h = texH;
+  } else {
+    dest = {0, 0, texW, texH};
+  }
 
   SDL_RenderTexture(renderer, texture, nullptr, &dest);
 }

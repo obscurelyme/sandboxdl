@@ -1,0 +1,5 @@
+<container id="main-menu" x="352" y="169" w="" h="" gap="8" direction="vertical">
+  <button id="play-button" x="" y="" w="96" h="32" onClick="playGame">Play</button>
+  <button id="credits-button" x="" y="" w="96" h="32" onClick="showCredits">Credits</button>
+  <button id="quit-button" x="" y="" w="96" h="32" onClick="quitGame">Quit</button>
+</container>
