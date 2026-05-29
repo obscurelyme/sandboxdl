@@ -20,6 +20,12 @@ public:
   void draw(SDL_Renderer *renderer) override;
 
 private:
+  void buildPausedLayer(Sprites::SpriteSheet *);
+  void buildGameOverLayer(Sprites::SpriteSheet *);
+
+  void handleResumeBtnClick();
+  void handleQuitBtnClick();
+
   bool paused{false};
   Sprites::Sprite heart;
   Bumper bumper;
@@ -28,6 +34,8 @@ private:
   std::unique_ptr<Audio::Sound> lostLifeSound{nullptr};
   std::unique_ptr<Audio::Sound> gameOverSound{nullptr};
   UI::Layer uiLayer;
+  UI::Layer pausedLayer;
+  UI::Layer gameOverLayer;
   PlayerLives lives;
 };
 } // namespace Game

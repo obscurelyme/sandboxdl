@@ -23,6 +23,7 @@ public:
   static void registerScene(SceneId sceneId, std::unique_ptr<IScene> scene);
   static void registerTransition(Uint32 sdlUserEvent, SceneId targetScene);
   static void start(SceneId scene);
+  static void shutdown();
   static void handleEvent(const SDL_Event &event);
   static void update(float deltaTime, const UI::InputContext &ctx);
   static void draw(SDL_Renderer *renderer);

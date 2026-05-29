@@ -1,5 +1,7 @@
 #include "game/game-scene.hpp"
 #include "game/bricks.hpp"
+#include "platform/events.hpp"
+#include "platform/input.hpp"
 
 namespace Game {
 void GameScene::onEnter() {
@@ -16,6 +18,8 @@ void GameScene::onEnter() {
       .b = 0,
       .a = 150,
   });
+  buildPausedLayer(sheet);
+  buildGameOverLayer(sheet);
 
   Game::Bricks::Create(sheet);
 
@@ -32,7 +36,12 @@ void GameScene::onEnter() {
   ball = Ball{sheet->getSprite("gold-ball"), initBallPosition};
 }
 
-void GameScene::onExit() { uiLayer.clear(); }
+void GameScene::onExit() {
+  paused = false;
+  uiLayer.clear();
+  pausedLayer.clear();
+  gameOverLayer.clear();
+}
 
 void GameScene::handleEvent(const SDL_Event &event) {
   if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
@@ -47,10 +56,18 @@ void GameScene::handleEvent(const SDL_Event &event) {
 }
 
 void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
+  if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_ESCAPE)) {
+    paused = !paused;
+  }
+
   if (!paused) {
     bumper.update(deltaTime);
     ball.update(deltaTime, bumper.collider());
   }
+
+  uiLayer.update(ctx);
+  pausedLayer.update(ctx);
+  gameOverLayer.update(ctx);
 }
 
 void GameScene::draw(SDL_Renderer *renderer) {
@@ -60,5 +77,52 @@ void GameScene::draw(SDL_Renderer *renderer) {
   ball.draw(renderer);
   bumper.draw(renderer);
   Game::Bricks::Draw(renderer);
+
+  if (paused) {
+    pausedLayer.draw(renderer);
+  }
+}
+
+void GameScene::buildPausedLayer(Sprites::SpriteSheet *sheet) {
+  pausedLayer.add<UI::Backdrop>(SDL_Color{.r = 0, .g = 0, .b = 0, .a = 100});
+  auto *resumeBtn = pausedLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 200, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = sheet->getSprite("ui-button"),
+      },
+      UI::TextProps{
+          .label = "Resume",
+          .fontName = "Tiny5",
+      });
+  auto *quitBtn = pausedLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 240, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = sheet->getSprite("ui-button"),
+      },
+      UI::TextProps{
+          .label = "Quit",
+          .fontName = "Tiny5",
+      });
+
+  resumeBtn->onHover = [this] {};
+  quitBtn->onHover = [this] {};
+
+  resumeBtn->onPressed = [this] { handleResumeBtnClick(); };
+  quitBtn->onPressed = [this] { handleQuitBtnClick(); };
+}
+
+void GameScene::buildGameOverLayer(Sprites::SpriteSheet *sheet) {}
+
+void GameScene::handleResumeBtnClick() {
+  // are we even here??
+  paused = false;
+}
+
+void GameScene::handleQuitBtnClick() {
+  Events::Emit(Events::USER_GAME_OVER, nullptr, nullptr);
 }
 } // namespace Game

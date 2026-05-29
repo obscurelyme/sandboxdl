@@ -40,10 +40,22 @@ void Manager::start(SceneId scene) {
   currentScene->onEnter();
 }
 
+void Manager::shutdown() {
+  if (currentScene != nullptr) {
+    currentScene->onExit();
+  }
+
+  currentScene = nullptr;
+  currentSceneId = SceneId::None;
+  pendingScene = {};
+
+  scenes.clear();
+  transitions.clear();
+}
+
 void Manager::handleEvent(const SDL_Event &event) {
   if (event.type == Events::USER_QUIT_APP) {
-    scenes.clear();
-    transitions.clear();
+    shutdown();
     return;
   }
 

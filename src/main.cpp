@@ -190,6 +190,7 @@ int main(void) {
   }
 
   SDL_LogInfo(0, "Closing application");
+  Scene::Manager::shutdown();
   Sprites::Manager::Clear();
   UI::FontManager::Quit();
   SDL_Quit();
