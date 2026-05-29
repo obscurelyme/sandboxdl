@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/background.hpp"
 #include "platform/audio.hpp"
 #include "platform/scene.hpp"
 #include <memory>
@@ -19,6 +20,7 @@ private:
   void handleCreditsBtnClick();
   void handleQuitBtnClick();
 
+  Background background;
   UI::Layer uiLayer;
   std::unique_ptr<Audio::Sound> btnClickSound;
 };

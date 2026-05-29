@@ -11,12 +11,9 @@ public:
   void update(float deltaTime, const SDL_FRect &bumperCollider);
   void draw(SDL_Renderer *renderer) const;
 
-  int getLives() const { return lives; }
-
 private:
   void reset();
 
-  int lives;
   float speed;
   Sprites::Sprite sprite;
   SDL_FPoint position;

@@ -10,7 +10,7 @@ void CreditsScene::onEnter() {
       .r = 0,
       .g = 0,
       .b = 0,
-      .a = 100,
+      .a = 150,
   });
   uiLayer.add<UI::Text>(
       SDL_FPoint{
@@ -35,9 +35,7 @@ void CreditsScene::onEnter() {
   backBtn->onHover = [this] { handleButtonFocus(); };
 }
 
-void CreditsScene::onExit() {
-  // TODO: play some sound maybe??
-}
+void CreditsScene::onExit() { uiLayer.clear(); }
 
 void CreditsScene::handleEvent(const SDL_Event &event) {
   // Note: this might just be a no-op

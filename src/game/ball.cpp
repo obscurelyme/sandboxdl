@@ -1,11 +1,12 @@
 #include "game/ball.hpp"
 #include "game/bricks.hpp"
+#include "platform/events.hpp"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
 namespace Game {
 Ball::Ball(const Sprites::Sprite &sprite, SDL_FPoint initPosition)
-    : lives(3), speed(100), sprite(sprite), position(initPosition) {
+    : speed(100), sprite(sprite), position(initPosition) {
   collider = {
       .x = position.x,
       .y = position.y,
@@ -46,8 +47,7 @@ void Ball::update(float deltaTime, const SDL_FRect &bumperCollider) {
   if (position.y >= bounds.h) {
     position.y = bounds.h;
     direction.y = -SDL_fabsf(direction.y);
-    lives--;
-    SDL_LogInfo(0, "Life lost! Lives remaining: %d", lives);
+    Events::Emit(Events::USER_PLAYER_LOST_LIFE, nullptr, nullptr);
     reset();
   }
 

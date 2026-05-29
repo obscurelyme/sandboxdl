@@ -6,11 +6,13 @@ void MainMenuScene::onEnter() {
   btnClickSound = std::make_unique<Audio::Sound>("button-hover-click");
   auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
 
+  background = Background{sheet->getSprite("background-brick")};
+
   uiLayer.add<UI::Backdrop>(SDL_Color{
       .r = 0,
       .g = 0,
       .b = 0,
-      .a = 100,
+      .a = 150,
   });
   uiLayer.add<UI::Text>(
       SDL_FPoint{
@@ -65,9 +67,7 @@ void MainMenuScene::onEnter() {
   quitBtn->onPressed = [this] { handleQuitBtnClick(); };
 }
 
-void MainMenuScene::onExit() {
-  // TODO: play some sound maybe??
-}
+void MainMenuScene::onExit() { uiLayer.clear(); }
 
 void MainMenuScene::handleEvent(const SDL_Event &event) {
   // Note: this might just be a no-op
@@ -78,8 +78,7 @@ void MainMenuScene::update(float deltaTime, const UI::InputContext &ctx) {
 }
 
 void MainMenuScene::draw(SDL_Renderer *renderer) {
-  // TODO: draw the background as well. function is in main.cpp need to abstract
-  // that and add it here...
+  background.draw(renderer);
   uiLayer.draw(renderer);
 }
 

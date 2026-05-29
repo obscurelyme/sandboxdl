@@ -1,7 +1,9 @@
 #pragma once
 
+#include "game/background.hpp"
 #include "game/ball.hpp"
 #include "game/bumper.hpp"
+#include "game/player-lives.hpp"
 #include "platform/audio.hpp"
 #include "platform/scene.hpp"
 #include <memory>
@@ -18,15 +20,14 @@ public:
   void draw(SDL_Renderer *renderer) override;
 
 private:
-  void drawBackground(Sprites::Sprite &, SDL_Renderer *);
-  void drawHearts(int, Sprites::Sprite &, SDL_Renderer *);
-
   bool paused{false};
-  Sprites::Sprite backgroundBrick;
   Sprites::Sprite heart;
   Bumper bumper;
   Ball ball;
+  Background background;
   std::unique_ptr<Audio::Sound> lostLifeSound{nullptr};
   std::unique_ptr<Audio::Sound> gameOverSound{nullptr};
+  UI::Layer uiLayer;
+  PlayerLives lives;
 };
 } // namespace Game

@@ -25,6 +25,8 @@ add_executable(sandboxdl
   src/game/main-menu-scene.cpp
   src/game/credits-scene.cpp
   src/game/game-scene.cpp
+  src/game/background.cpp
+  src/game/player-lives.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)
