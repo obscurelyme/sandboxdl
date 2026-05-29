@@ -86,7 +86,7 @@ struct ButtonProps {
   SDL_FRect bounds;
   int paddingX;
   int paddingY;
-  Sprites::Sprite *sprite;
+  Sprites::Sprite sprite;
 };
 
 enum class Align { Start, Center, End };
@@ -138,7 +138,7 @@ public:
 
 private:
   std::shared_ptr<Text> label;
-  Sprites::Sprite *sprite;
+  Sprites::Sprite sprite;
   int paddingX;
   int paddingY;
 };
@@ -147,13 +147,18 @@ class Text : public Widget {
 public:
   Text(std::string text, std::shared_ptr<Font> font);
   Text(SDL_FRect bounds, std::string text, std::shared_ptr<Font> font);
+  Text(SDL_FPoint position, std::string text, std::shared_ptr<Font> font,
+       float fontSize);
+
   void update(const InputContext &ctx) override;
   void draw(SDL_Renderer *renderer) const override;
   void setText(std::string newText);
+  void setFontSize(float size);
 
 private:
   std::string text;
   std::shared_ptr<Font> font;
   SDL_Texture *texture;
+  float fontSize;
 };
 } // namespace UI

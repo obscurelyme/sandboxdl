@@ -19,6 +19,7 @@ public:
   bool enableSDF();
   bool disableSDF();
   SDL_Texture *renderText(std::string text, SDL_Color *color);
+  SDL_Texture *renderText(std::string text, float pixelSize, SDL_Color *color);
   SDL_Texture *renderTextFitted(std::string text, SDL_Color *color,
                                 SDL_FRect bounds);
 

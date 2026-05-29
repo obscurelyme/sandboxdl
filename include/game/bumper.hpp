@@ -6,7 +6,7 @@
 namespace Game {
 class Bumper {
 public:
-  Bumper() = delete;
+  Bumper() = default;
   explicit Bumper(const Sprites::Sprite &, SDL_FPoint initPosition);
 
   void update(float deltaTime);

@@ -5,6 +5,7 @@
 namespace Game {
 class Ball {
 public:
+  Ball() = default;
   Ball(const Sprites::Sprite &sprite, SDL_FPoint initPosition);
 
   void update(float deltaTime, const SDL_FRect &bumperCollider);

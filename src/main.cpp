@@ -1,11 +1,11 @@
-#include "game/ball.hpp"
-#include "game/bricks.hpp"
-#include "game/bumper.hpp"
+#include "game/credits-scene.hpp"
+#include "game/game-scene.hpp"
+#include "game/main-menu-scene.hpp"
 #include "logging/handler.hpp"
-#include "platform/audio.hpp"
 #include "platform/debug-gui.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
+#include "platform/scene.hpp"
 #include "platform/spritesheet.hpp"
 #include "platform/text.hpp"
 #include "platform/ui.hpp"
@@ -107,89 +107,27 @@ int main(void) {
 
   UI::FontManager::SetRenderer(renderer);
   UI::FontManager::LoadFont("Tiny5");
+  Sprites::Manager::SetRenderer(renderer);
+  Sprites::Manager::LoadSpriteSheet("breakout-spritesheet");
 
-  Sprites::SpriteSheet sheet =
-      Sprites::SpriteSheet::loadSpriteSheet(renderer, "breakout-spritesheet");
+  /* #region Scenes */
+  Scene::Manager::registerScene(Scene::SceneId::MainMenu,
+                                std::make_unique<Game::MainMenuScene>());
+  Scene::Manager::registerScene(Scene::SceneId::Game,
+                                std::make_unique<Game::GameScene>());
+  Scene::Manager::registerScene(Scene::SceneId::Credits,
+                                std::make_unique<Game::CreditsScene>());
 
-  Audio::Sound *btnHoverClick = new Audio::Sound("button-hover-click");
+  Scene::Manager::registerTransition(Events::USER_PLAY_GAME,
+                                     Scene::SceneId::Game);
+  Scene::Manager::registerTransition(Events::USER_SHOW_CREDITS,
+                                     Scene::SceneId::Credits);
+  Scene::Manager::registerTransition(Events::USER_HIDE_CREDITS,
+                                     Scene::SceneId::MainMenu);
+  Scene::Manager::registerTransition(Events::USER_GAME_OVER,
+                                     Scene::SceneId::MainMenu);
 
-  /* #region UI */
-  UI::Layer uiLayer;
-  Sprites::Sprite uiBtnSprite = sheet.getSprite("ui-button");
-  Sprites::Sprite uiBtnSprite2 = sheet.getSprite("ui-button");
-  Sprites::Sprite uiBtnSprite3 = sheet.getSprite("ui-button");
-  uiLayer.add<UI::Backdrop>(SDL_Color{
-      .r = 0,
-      .g = 0,
-      .b = 0,
-      .a = 100,
-  });
-  auto *btn = uiLayer.add<UI::Button>(
-      UI::ButtonProps{
-          .bounds = SDL_FRect{.x = 352, .y = 200, .w = 96, .h = 32},
-          .paddingX = 6,
-          .paddingY = 6,
-          .sprite = &uiBtnSprite,
-      },
-      UI::TextProps{
-          .label = "Play",
-          .fontName = "Tiny5",
-      });
-  auto *creditsBtn = uiLayer.add<UI::Button>(
-      UI::ButtonProps{
-          .bounds = SDL_FRect{.x = 352, .y = 240, .w = 96, .h = 32},
-          .paddingX = 6,
-          .paddingY = 6,
-          .sprite = &uiBtnSprite2,
-      },
-      UI::TextProps{
-          .label = "Credits",
-          .fontName = "Tiny5",
-      });
-  auto *quitBtn = uiLayer.add<UI::Button>(
-      UI::ButtonProps{
-          .bounds = SDL_FRect{.x = 352, .y = 280, .w = 96, .h = 32},
-          .paddingX = 6,
-          .paddingY = 6,
-          .sprite = &uiBtnSprite3,
-      },
-      UI::TextProps{
-          .label = "Quit",
-          .fontName = "Tiny5",
-      });
-
-  btn->onPressed = [] {};
-  btn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
-  creditsBtn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
-  quitBtn->onHover = [&btnHoverClick] { btnHoverClick->play(); };
-  btn->onBlur = [] {};
-  btn->onFocus = [] {};
-  quitBtn->onPressed = [] {
-    Events::Emit(Events::USER_QUIT_APP, nullptr, nullptr);
-  };
-  /* #endregion */
-
-  /* #region Scene */
-  Sprites::Sprite backgroundBrick = sheet.getSprite("background-brick");
-  backgroundBrick.colorMod(40, 40, 40);
-
-  Sprites::Sprite heart = sheet.getSprite("heart");
-  heart.scaleX = 1.5f;
-  heart.scaleY = 1.5f;
-  heart.dest.y = 450 - heart.height() - 10;
-  Game::Bricks::Create(&sheet);
-
-  SDL_FPoint initBumperPosition{
-      .x = 800.f / 2,
-      .y = 400,
-  };
-  Game::Bumper bumper{sheet.getSprite("blue-bumper"), initBumperPosition};
-
-  SDL_FPoint initBallPosition{
-      .x = 800.f / 2,
-      .y = 300,
-  };
-  Game::Ball ball{sheet.getSprite("gold-ball"), initBallPosition};
+  Scene::Manager::start(Scene::SceneId::MainMenu);
   /* #endregion */
 
   DebugGui::FPS fpsCounter{};
@@ -210,11 +148,6 @@ int main(void) {
     // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
-        running = false;
-        continue;
-      }
-
       // TODO: come up with a more decoupled way of handling this...
       if (event.type == SDL_EVENT_KEY_DOWN) {
         if (event.key.scancode == SDL_SCANCODE_SLASH) {
@@ -223,47 +156,41 @@ int main(void) {
       }
 
       if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
-        paused = true;
         Input::Manager::Reset();
       }
 
       if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
         lastTick = SDL_GetTicks();
-        paused = false;
       }
 
       Input::Manager::HandleInputEvent(renderer, event);
       inputCtx = UI::SnapshotCtx();
+      Scene::Manager::handleEvent(event);
+
+      if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
+        running = false;
+      }
     }
 
-    // UI-Layer Update
-    uiLayer.update(inputCtx);
-
-    // Update game objects
-    if (!paused) {
-      bumper.update(deltaTime);
-      ball.update(deltaTime, bumper.collider());
+    if (!running) {
+      continue;
     }
+
+    // Update Scene
+    Scene::Manager::update(deltaTime, inputCtx);
 
     // Render frame
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    drawBackground(backgroundBrick, renderer);
-    drawHearts(ball.getLives(), heart, renderer);
-    ball.draw(renderer);
-    bumper.draw(renderer);
-    Game::Bricks::Draw(renderer);
-
-    // UI-Layer Draw
-    uiLayer.draw(renderer);
+    // Draw Scene
+    Scene::Manager::draw(renderer);
 
     SDL_RenderPresent(renderer);
   }
 
-  SDL_free(btnHoverClick);
   SDL_LogInfo(0, "Closing application");
-  uiLayer.clear();
+  Sprites::Manager::Clear();
   UI::FontManager::Quit();
   SDL_Quit();
   SDL_LogInfo(0, "Application closed!");

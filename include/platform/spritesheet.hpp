@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_render.h>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -11,8 +12,7 @@ class Sprite; // forward declaration
 
 class SpriteSheet {
 public:
-  SpriteSheet(std::string name, SDL_Texture *texture,
-              std::unordered_map<std::string, SDL_FRect> frames);
+  SpriteSheet(const std::string &name, SDL_Renderer *renderer);
   SpriteSheet(const SpriteSheet &) = delete;
   SpriteSheet &operator=(const SpriteSheet &) = delete;
   ~SpriteSheet();
@@ -22,8 +22,7 @@ public:
    * the XML and then construct a SpriteSheet from which one can create new
    * sprites whilst saving on GPU memory.
    */
-  static SpriteSheet loadSpriteSheet(SDL_Renderer *renderer,
-                                     std::string_view filePath);
+  void loadSpriteSheet(SDL_Renderer *renderer, const std::string &filePath);
   Sprite getSprite(std::string_view name) const;
   SDL_Texture *getTexture() const;
 
@@ -59,4 +58,16 @@ private:
   int b;
 };
 
+class Manager {
+public:
+  static void SetRenderer(SDL_Renderer *renderer);
+  static void LoadSpriteSheet(const std::string &name);
+  static void Clear();
+  static SpriteSheet *GetSpriteSheet(const std::string &name);
+
+private:
+  static SDL_Renderer *spriteRenderer;
+  static std::unordered_map<std::string, std::unique_ptr<SpriteSheet>>
+      spriteSheets;
+};
 } // namespace Sprites

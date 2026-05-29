@@ -21,6 +21,10 @@ add_executable(sandboxdl
   src/platform/ui.cpp
   src/platform/text.cpp
   src/platform/audio.cpp
+  src/platform/scene.cpp
+  src/game/main-menu-scene.cpp
+  src/game/credits-scene.cpp
+  src/game/game-scene.cpp
 )
 
 target_include_directories(sandboxdl PRIVATE include)

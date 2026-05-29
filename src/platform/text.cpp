@@ -62,6 +62,14 @@ SDL_Texture *Font::renderText(std::string text, SDL_Color *color) {
   return texture;
 }
 
+SDL_Texture *Font::renderText(std::string text, float pixelSize,
+                              SDL_Color *color) {
+  TTF_SetFontSize(ttfFont, pixelSize);
+  SDL_Texture *scaledTexture = renderText(text, color);
+  TTF_SetFontSize(ttfFont, ptSize);
+  return scaledTexture;
+}
+
 SDL_Texture *Font::renderTextFitted(std::string text, SDL_Color *color,
                                     SDL_FRect bounds) {
   int w, h;

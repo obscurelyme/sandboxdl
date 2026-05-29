@@ -8,11 +8,14 @@
 #include <tinyxml2.h>
 
 namespace Sprites {
-SpriteSheet::SpriteSheet() : texture(nullptr), spriteFrames({}) {}
-
-SpriteSheet::SpriteSheet(std::string name, SDL_Texture *texture,
-                         std::unordered_map<std::string, SDL_FRect> frames)
-    : name(name), texture(texture), spriteFrames(frames) {}
+SpriteSheet::SpriteSheet(const std::string &name, SDL_Renderer *renderer) {
+  if (!renderer) {
+    SDL_LogError(0, "[Sprites::SpriteSheet] SDL_Renderer was not set, are you "
+                    "sure you called Sprites::Manager::SetRenderer?");
+    SDL_assert_always(false);
+  }
+  loadSpriteSheet(renderer, name);
+}
 
 SpriteSheet::~SpriteSheet() {
   SDL_LogTrace(0, "Freeing texture for SpriteSheet '%s'", name.c_str());
@@ -21,8 +24,8 @@ SpriteSheet::~SpriteSheet() {
 
 SDL_Texture *SpriteSheet::getTexture() const { return texture; }
 
-SpriteSheet SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
-                                         std::string_view filePath) {
+void SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
+                                  const std::string &filePath) {
   SDL_LogInfo(0, "Loading SpriteSheet '%s'", std::string(filePath).c_str());
   tinyxml2::XMLDocument doc;
   std::string filePathWithExt = std::string(filePath) + ".xml";
@@ -42,7 +45,7 @@ SpriteSheet SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
   const char *nameAttr = rootEl->Attribute("name");
   SDL_assert_always(nameAttr != nullptr &&
                     "Spritesheet XML missing 'name' attribute");
-  std::string name = nameAttr;
+  name = nameAttr;
 
   const char *srcAttr = rootEl->Attribute("src");
   SDL_assert_always(srcAttr != nullptr &&
@@ -52,7 +55,7 @@ SpriteSheet SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
   auto textureAssetPath =
       std::filesystem::path(SDL_GetBasePath()) / "assets" / "sprites" / src;
   SDL_Surface *surface = SDL_LoadPNG(textureAssetPath.string().c_str());
-  SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+  texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
   SDL_DestroySurface(surface);
 
@@ -80,7 +83,8 @@ SpriteSheet SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
 
   SDL_LogInfo(0, "Successfully loaded SpriteSheet '%s'",
               std::string(filePath).c_str());
-  return SpriteSheet{name, texture, frames};
+
+  spriteFrames = frames;
 }
 
 Sprite SpriteSheet::getSprite(std::string_view name) const {
@@ -125,4 +129,38 @@ void Sprite::colorMod(float red, float green, float blue) {
 }
 
 void Sprite::alphaMod(float a) { alpha = SDL_clamp(a, 0, 255); }
+
+std::unordered_map<std::string, std::unique_ptr<SpriteSheet>>
+    Manager::spriteSheets{};
+
+SDL_Renderer *Manager::spriteRenderer = nullptr;
+
+void Manager::SetRenderer(SDL_Renderer *renderer) { spriteRenderer = renderer; }
+
+void Manager::LoadSpriteSheet(const std::string &name) {
+  auto iterator = spriteSheets.find(name);
+  if (iterator != spriteSheets.end()) {
+    SDL_LogWarn(
+        0,
+        "[Sprites::Manager] Invalid attempt to load existing spritesheet '%s'",
+        name.c_str());
+    return;
+  }
+
+  spriteSheets[name] = std::make_unique<SpriteSheet>(name, spriteRenderer);
+}
+
+void Manager::Clear() { spriteSheets.clear(); }
+
+SpriteSheet *Manager::GetSpriteSheet(const std::string &name) {
+  auto iterator = spriteSheets.find(name);
+  if (iterator == spriteSheets.end()) {
+    SDL_LogError(0, "[Sprites::Manager] Spritesheet does '%s' does not exist",
+                 name.c_str());
+    SDL_assert_always(false);
+  }
+
+  return iterator->second.get();
+}
+
 } // namespace Sprites

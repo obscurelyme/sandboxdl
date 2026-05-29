@@ -25,10 +25,6 @@ Sound::~Sound() {
 }
 
 void Sound::play() {
-  if (audioStream) {
-    SDL_DestroyAudioStream(audioStream);
-  }
-
   audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
                                           &spec, nullptr, nullptr);
   SDL_PutAudioStreamData(audioStream, buffer, bufferSize);

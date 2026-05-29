@@ -150,18 +150,18 @@ void Container::draw(SDL_Renderer *renderer) const {
 void Button::setPosition(float x, float y) {
   bounds.x = x;
   bounds.y = y;
-  sprite->dest.x = x;
-  sprite->dest.y = y;
+  sprite.dest.x = x;
+  sprite.dest.y = y;
   label->setPosition(x + paddingX, y + paddingY);
 }
 
 void Button::setBounds(SDL_FRect newBounds) {
   bounds = newBounds;
 
-  sprite->dest.x = bounds.x;
-  sprite->dest.y = bounds.y;
-  sprite->scaleX = bounds.w / sprite->width();
-  sprite->scaleY = bounds.h / sprite->height();
+  sprite.dest.x = bounds.x;
+  sprite.dest.y = bounds.y;
+  sprite.scaleX = bounds.w / sprite.width();
+  sprite.scaleY = bounds.h / sprite.height();
 
   label->setBounds(SDL_FRect{
       .x = bounds.x + paddingX,
@@ -174,10 +174,10 @@ void Button::setBounds(SDL_FRect newBounds) {
 Button::Button(const ButtonProps &btnProps, const TextProps &textProps)
     : Widget(btnProps.bounds), sprite(btnProps.sprite),
       paddingX(btnProps.paddingX), paddingY(btnProps.paddingY) {
-  sprite->dest.x = bounds.x;
-  sprite->dest.y = bounds.y;
-  sprite->scaleX = bounds.w / sprite->width();
-  sprite->scaleY = bounds.h / sprite->height();
+  sprite.dest.x = bounds.x;
+  sprite.dest.y = bounds.y;
+  sprite.scaleX = bounds.w / sprite.width();
+  sprite.scaleY = bounds.h / sprite.height();
   label = std::make_shared<Text>(
       SDL_FRect{
           .x = bounds.x + paddingX,
@@ -189,7 +189,7 @@ Button::Button(const ButtonProps &btnProps, const TextProps &textProps)
 }
 
 void Button::draw(SDL_Renderer *renderer) const {
-  sprite->draw(renderer);
+  sprite.draw(renderer);
   label->draw(renderer);
 }
 
@@ -197,6 +197,15 @@ Text::Text(SDL_FRect bounds, std::string text, std::shared_ptr<Font> font)
     : Widget(bounds), text(text), font(font) {
   if (font && !text.empty()) {
     texture = font->renderTextFitted(text, nullptr, bounds);
+  }
+}
+
+Text::Text(SDL_FPoint position, std::string text, std::shared_ptr<Font> font,
+           float fontSize)
+    : Widget({.x = position.x, .y = position.y, .w = 0, .h = 0}), text(text),
+      font(font), fontSize(fontSize) {
+  if (font && !text.empty()) {
+    texture = font->renderText(text, fontSize, nullptr);
   }
 }
 
@@ -221,6 +230,13 @@ void Text::setText(std::string newText) {
   }
 }
 
+void Text::setFontSize(float size) {
+  fontSize = size;
+  if (font && !text.empty()) {
+    texture = font->renderText(text, nullptr);
+  }
+}
+
 void Text::draw(SDL_Renderer *renderer) const {
   float texW, texH;
   SDL_GetTextureSize(texture, &texW, &texH);
@@ -232,7 +248,7 @@ void Text::draw(SDL_Renderer *renderer) const {
     dest.w = texW;
     dest.h = texH;
   } else {
-    dest = {0, 0, texW, texH};
+    dest = {bounds.x, bounds.y, texW, texH};
   }
 
   SDL_RenderTexture(renderer, texture, nullptr, &dest);
