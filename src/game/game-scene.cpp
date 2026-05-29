@@ -53,7 +53,8 @@ void GameScene::handleEvent(const SDL_Event &event) {
     paused = false;
   }
 
-  if (event.type == Events::USER_GAME_OVER) {
+  if (event.type == Events::USER_GAME_OVER ||
+      event.type == Events::USER_GAME_WIN) {
     gameOver = true;
   }
 

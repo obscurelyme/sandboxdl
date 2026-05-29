@@ -1,4 +1,5 @@
 #include "game/bricks.hpp"
+#include "platform/events.hpp"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
@@ -57,16 +58,24 @@ void Bricks::Draw(SDL_Renderer *renderer) {
   }
 }
 
+int Bricks::remainingBricks{numBricks};
+
 void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
                              SDL_FPoint &ballDirection, float &ballSpeed) {
   for (Bricks &b : bricks) {
     if (!b.hidden &&
         SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
       b.hidden = true;
+      remainingBricks--;
       ballDirection.y = -ballDirection.y;
       ballSpeed = SDL_min(400.0f, ballSpeed * 1.1f);
       break;
     }
+  }
+
+  if (remainingBricks <= 0) {
+    remainingBricks = numBricks;
+    Events::Emit(Events::USER_GAME_WIN, nullptr, nullptr);
   }
 }
 } // namespace Game
