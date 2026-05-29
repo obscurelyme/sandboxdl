@@ -37,9 +37,6 @@ void Bricks::Create(const Sprites::SpriteSheet *sheet) {
           .y = (float)(Y_MARGIN + j * (BRICK_HEIGHT + Y_PADDING)),
       };
 
-      SDL_LogInfo(0, "Brick position (%f, %f)", newBrick.position.x,
-                  newBrick.position.y);
-
       // NOTE: change color based on row
       newBrick.sprite = sheet->getSprite(rowColors[j]);
 
@@ -48,6 +45,8 @@ void Bricks::Create(const Sprites::SpriteSheet *sheet) {
       bricks[j * MAX_BRICKS_COLUMNS + i] = newBrick;
     }
   }
+
+  remainingBricks = numBricks;
 }
 
 void Bricks::Draw(SDL_Renderer *renderer) {

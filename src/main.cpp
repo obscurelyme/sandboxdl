@@ -18,30 +18,6 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 
-void drawBackground(Sprites::Sprite &sprite, SDL_Renderer *renderer) {
-  float columns = (800 / sprite.width()) + 1;
-  float rows = 450 / sprite.height();
-
-  for (int i = 0; i < rows; i++) {
-    float offsetX = i % 2 == 0 ? 0 : sprite.width() * 0.5f;
-
-    for (int j = 0; j < columns; j++) {
-      sprite.dest.x = ((float)j * sprite.width()) - offsetX;
-      sprite.dest.y = (float)i * sprite.height();
-      sprite.draw(renderer);
-    }
-  }
-}
-
-void drawHearts(int numLives, Sprites::Sprite &sprite, SDL_Renderer *renderer) {
-  const float PADDING = 4;
-
-  for (int i = 0; i < numLives; i++) {
-    sprite.dest.x = 750 - (i * (sprite.width() + PADDING));
-    sprite.draw(renderer);
-  }
-}
-
 int main(void) {
   /* #region Init Logic */
   SDL_SetLogOutputFunction(Logging::Handler, nullptr);
@@ -92,6 +68,7 @@ int main(void) {
                                         &renderer);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
+    return 1;
   }
 
   SDL_SetRenderLogicalPresentation(renderer, 800, 450,

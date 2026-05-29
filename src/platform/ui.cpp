@@ -222,6 +222,7 @@ void Text::update(const InputContext &ctx) {
 
 void Text::setText(std::string newText) {
   text = newText;
+  SDL_DestroyTexture(texture);
 
   if (bounds.w > 0 && bounds.h > 0) {
     texture = font->renderTextFitted(text, nullptr, bounds);
@@ -232,7 +233,9 @@ void Text::setText(std::string newText) {
 
 void Text::setFontSize(float size) {
   fontSize = size;
+
   if (font && !text.empty()) {
+    SDL_DestroyTexture(texture);
     texture = font->renderText(text, nullptr);
   }
 }
