@@ -124,8 +124,10 @@ int main(void) {
                                      Scene::SceneId::Credits);
   Scene::Manager::registerTransition(Events::USER_HIDE_CREDITS,
                                      Scene::SceneId::MainMenu);
-  Scene::Manager::registerTransition(Events::USER_GAME_OVER,
+  Scene::Manager::registerTransition(Events::USER_QUIT_GAME,
                                      Scene::SceneId::MainMenu);
+  Scene::Manager::registerTransition(Events::USER_RETRY_GAME,
+                                     Scene::SceneId::Game);
 
   Scene::Manager::start(Scene::SceneId::MainMenu);
   /* #endregion */

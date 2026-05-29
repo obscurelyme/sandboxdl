@@ -23,10 +23,12 @@ private:
   void buildPausedLayer(Sprites::SpriteSheet *);
   void buildGameOverLayer(Sprites::SpriteSheet *);
 
+  void handleRetryBtnClick();
   void handleResumeBtnClick();
   void handleQuitBtnClick();
 
   bool paused{false};
+  bool gameOver{false};
   Sprites::Sprite heart;
   Bumper bumper;
   Ball ball;

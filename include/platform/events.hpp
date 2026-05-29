@@ -6,6 +6,8 @@
 namespace Events {
 const inline Uint32 USER_PLAY_GAME{SDL_RegisterEvents(1)};
 const inline Uint32 USER_GAME_OVER{SDL_RegisterEvents(1)};
+const inline Uint32 USER_RETRY_GAME{SDL_RegisterEvents(1)};
+const inline Uint32 USER_QUIT_GAME{SDL_RegisterEvents(1)};
 const inline Uint32 USER_QUIT_APP{SDL_RegisterEvents(1)};
 const inline Uint32 USER_PAUSE{SDL_RegisterEvents(1)};
 const inline Uint32 USER_UNPAUSE{SDL_RegisterEvents(1)};

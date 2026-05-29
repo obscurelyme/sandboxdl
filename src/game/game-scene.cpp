@@ -37,6 +37,7 @@ void GameScene::onEnter() {
 }
 
 void GameScene::onExit() {
+  gameOver = false;
   paused = false;
   uiLayer.clear();
   pausedLayer.clear();
@@ -52,22 +53,33 @@ void GameScene::handleEvent(const SDL_Event &event) {
     paused = false;
   }
 
+  if (event.type == Events::USER_GAME_OVER) {
+    gameOver = true;
+  }
+
   lives.handleEvent(event);
 }
 
 void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
   if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_ESCAPE)) {
-    paused = !paused;
+    if (!gameOver) {
+      paused = !paused;
+    }
   }
 
-  if (!paused) {
+  if (!paused && !gameOver) {
     bumper.update(deltaTime);
     ball.update(deltaTime, bumper.collider());
   }
 
   uiLayer.update(ctx);
-  pausedLayer.update(ctx);
-  gameOverLayer.update(ctx);
+  if (paused) {
+    pausedLayer.update(ctx);
+  }
+
+  if (gameOver) {
+    gameOverLayer.update(ctx);
+  }
 }
 
 void GameScene::draw(SDL_Renderer *renderer) {
@@ -80,6 +92,10 @@ void GameScene::draw(SDL_Renderer *renderer) {
 
   if (paused) {
     pausedLayer.draw(renderer);
+  }
+
+  if (gameOver) {
+    gameOverLayer.draw(renderer);
   }
 }
 
@@ -115,14 +131,42 @@ void GameScene::buildPausedLayer(Sprites::SpriteSheet *sheet) {
   quitBtn->onPressed = [this] { handleQuitBtnClick(); };
 }
 
-void GameScene::buildGameOverLayer(Sprites::SpriteSheet *sheet) {}
+void GameScene::buildGameOverLayer(Sprites::SpriteSheet *sheet) {
+  gameOverLayer.add<UI::Backdrop>(SDL_Color{.r = 0, .g = 0, .b = 0, .a = 100});
+  auto *retryBtn = gameOverLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 200, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = sheet->getSprite("ui-button"),
+      },
+      UI::TextProps{
+          .label = "Retry",
+          .fontName = "Tiny5",
+      });
+  auto *quitBtn = gameOverLayer.add<UI::Button>(
+      UI::ButtonProps{
+          .bounds = SDL_FRect{.x = 352, .y = 240, .w = 96, .h = 32},
+          .paddingX = 6,
+          .paddingY = 6,
+          .sprite = sheet->getSprite("ui-button"),
+      },
+      UI::TextProps{
+          .label = "Quit",
+          .fontName = "Tiny5",
+      });
 
-void GameScene::handleResumeBtnClick() {
-  // are we even here??
-  paused = false;
+  retryBtn->onPressed = [this] { handleRetryBtnClick(); };
+  quitBtn->onPressed = [this] { handleQuitBtnClick(); };
 }
 
+void GameScene::handleRetryBtnClick() {
+  Events::Emit(Events::USER_RETRY_GAME, nullptr, nullptr);
+}
+
+void GameScene::handleResumeBtnClick() { paused = false; }
+
 void GameScene::handleQuitBtnClick() {
-  Events::Emit(Events::USER_GAME_OVER, nullptr, nullptr);
+  Events::Emit(Events::USER_QUIT_GAME, nullptr, nullptr);
 }
 } // namespace Game
