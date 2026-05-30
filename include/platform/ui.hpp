@@ -153,12 +153,21 @@ public:
   void update(const InputContext &ctx) override;
   void draw(SDL_Renderer *renderer) const override;
   void setText(std::string newText);
+  void setColor(SDL_Color color);
   void setFontSize(float size);
+  void setFitted(bool fitted);
 
 private:
+  bool fitted;
   std::string text;
   std::shared_ptr<Font> font;
   SDL_Texture *texture;
   float fontSize;
+  SDL_Color color{
+      .r = 255,
+      .g = 255,
+      .b = 255,
+      .a = 255,
+  };
 };
 } // namespace UI

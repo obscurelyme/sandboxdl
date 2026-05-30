@@ -5,7 +5,6 @@
 #include "platform/scene.hpp"
 #include <memory>
 
-
 namespace Game {
 class CreditsScene : public Scene::IScene {
 public:
@@ -22,5 +21,17 @@ private:
   Background background;
   UI::Layer uiLayer;
   std::unique_ptr<Audio::Sound> btnClickSound;
+  SDL_Color linkHoverColor{
+      .r = 64,
+      .g = 175,
+      .b = 255,
+      .a = 255,
+  };
+  SDL_Color linkDefaultColor{
+      .r = 255,
+      .g = 255,
+      .b = 255,
+      .a = 255,
+  };
 };
 } // namespace Game

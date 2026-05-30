@@ -194,40 +194,61 @@ void Button::draw(SDL_Renderer *renderer) const {
 }
 
 Text::Text(SDL_FRect bounds, std::string text, std::shared_ptr<Font> font)
-    : Widget(bounds), text(text), font(font) {
+    : Widget(bounds), text(text), font(font), fitted(true) {
   if (font && !text.empty()) {
-    texture = font->renderTextFitted(text, nullptr, bounds);
+    texture = font->renderTextFitted(text, &color, bounds);
   }
 }
 
 Text::Text(SDL_FPoint position, std::string text, std::shared_ptr<Font> font,
            float fontSize)
     : Widget({.x = position.x, .y = position.y, .w = 0, .h = 0}), text(text),
-      font(font), fontSize(fontSize) {
+      font(font), fontSize(fontSize), fitted(false) {
   if (font && !text.empty()) {
-    texture = font->renderText(text, fontSize, nullptr);
+    texture = font->renderText(text, fontSize, &color);
+    if (!fitted) {
+      SDL_GetTextureSize(texture, &bounds.w, &bounds.h);
+    }
   }
 }
 
 Text::Text(std::string text, std::shared_ptr<Font> font)
-    : Widget({}), text(text), font(font), texture(nullptr) {
+    : Widget({}), text(text), font(font), texture(nullptr), fitted(false) {
   if (font && !text.empty()) {
-    texture = font->renderText(text, nullptr);
+    texture = font->renderText(text, &color);
+    if (!fitted) {
+      SDL_GetTextureSize(texture, &bounds.w, &bounds.h);
+    }
   }
 }
 
-void Text::update(const InputContext &ctx) {
-  // no-op
-}
+void Text::update(const InputContext &ctx) { Widget::update(ctx); }
 
 void Text::setText(std::string newText) {
   text = newText;
   SDL_DestroyTexture(texture);
 
-  if (bounds.w > 0 && bounds.h > 0) {
-    texture = font->renderTextFitted(text, nullptr, bounds);
+  if (fitted && bounds.w > 0 && bounds.h > 0) {
+    texture = font->renderTextFitted(text, &color, bounds);
   } else {
-    texture = font->renderText(text, nullptr);
+    texture = font->renderText(text, &color);
+    if (!fitted) {
+      SDL_GetTextureSize(texture, &bounds.w, &bounds.h);
+    }
+  }
+}
+
+void Text::setColor(SDL_Color newColor) {
+  color = newColor;
+  SDL_DestroyTexture(texture);
+
+  if (fitted && bounds.w > 0 && bounds.h > 0) {
+    texture = font->renderTextFitted(text, &color, bounds);
+  } else {
+    texture = font->renderText(text, &color);
+    if (!fitted) {
+      SDL_GetTextureSize(texture, &bounds.w, &bounds.h);
+    }
   }
 }
 
@@ -236,7 +257,10 @@ void Text::setFontSize(float size) {
 
   if (font && !text.empty()) {
     SDL_DestroyTexture(texture);
-    texture = font->renderText(text, nullptr);
+    texture = font->renderText(text, &color);
+    if (!fitted) {
+      SDL_GetTextureSize(texture, &bounds.w, &bounds.h);
+    }
   }
 }
 
@@ -245,7 +269,7 @@ void Text::draw(SDL_Renderer *renderer) const {
   SDL_GetTextureSize(texture, &texW, &texH);
 
   SDL_FRect dest;
-  if (bounds.w > 0 && bounds.h > 0) {
+  if (fitted && bounds.w > 0 && bounds.h > 0) {
     dest.x = bounds.x + (bounds.w - texW) * 0.5f;
     dest.y = bounds.y + (bounds.h - texH) * 0.5f;
     dest.w = texW;
