@@ -125,7 +125,6 @@ int main(void) {
 #endif
 
   uint64_t lastTick = SDL_GetTicks();
-  bool paused = false;
   UI::InputContext inputCtx;
   bool running = true;
   while (running) {
