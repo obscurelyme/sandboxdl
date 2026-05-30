@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
 
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 set(SDL_MAIN_USE_CALLBACKS 0)
+
+if(WIN32)
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "Vcpkg target triplet" FORCE)
+    set(VCPKG_HOST_TRIPLET "x64-windows-static" CACHE STRING "Vcpkg host triplet" FORCE)
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Vcpkg target triplet" FORCE)
+    set(VCPKG_HOST_TRIPLET "x64-windows" CACHE STRING "Vcpkg host triplet" FORCE)
+  endif()
+endif()
 
 project(sandboxdl)
 
@@ -30,6 +44,7 @@ add_executable(sandboxdl
 )
 
 target_include_directories(sandboxdl PRIVATE include)
+
 target_link_libraries(
   sandboxdl 
   PRIVATE 

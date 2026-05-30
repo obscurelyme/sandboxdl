@@ -12,8 +12,8 @@
       "description": "Default build using Ninja generator",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_CXX_STANDARD": "20"
       },
@@ -36,7 +36,10 @@
       "description": "Release build",
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_HOST_TRIPLET": "x64-windows-static"
       }
     }
   ]

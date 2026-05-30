@@ -68,18 +68,20 @@ void GameScene::handleEvent(const SDL_Event &event) {
     SDL_HideCursor();
   }
 
-  if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST && !paused) {
+  if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST && !paused && !gameOver) {
     Events::Emit(Events::USER_PAUSE, nullptr, nullptr);
   }
 
   if (event.type == Events::USER_GAME_OVER) {
     gameOver = true;
     gameOverSound->play();
+    SDL_ShowCursor();
   }
 
   if (event.type == Events::USER_GAME_WIN) {
     gameOver = true;
     gameWinSound->play();
+    SDL_ShowCursor();
   }
 
   lives.handleEvent(event);
