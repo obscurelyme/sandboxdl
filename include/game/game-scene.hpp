@@ -27,14 +27,20 @@ private:
   void handleResumeBtnClick();
   void handleQuitBtnClick();
 
+  void handleBtnHover();
+
   bool paused{false};
   bool gameOver{false};
   Sprites::Sprite heart;
   Bumper bumper;
   Ball ball;
   Background background;
+  std::unique_ptr<Audio::Sound> pauseSound{nullptr};
+  std::unique_ptr<Audio::Sound> unpauseSound{nullptr};
   std::unique_ptr<Audio::Sound> lostLifeSound{nullptr};
   std::unique_ptr<Audio::Sound> gameOverSound{nullptr};
+  std::unique_ptr<Audio::Sound> gameWinSound{nullptr};
+  std::unique_ptr<Audio::Sound> btnClickSound{nullptr};
   UI::Layer uiLayer;
   UI::Layer pausedLayer;
   UI::Layer gameOverLayer;

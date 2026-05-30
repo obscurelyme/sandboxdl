@@ -9,7 +9,7 @@ namespace Audio {
 class Sound {
 public:
   Sound(const std::string &name);
-  ~Sound() = default;
+  ~Sound();
 
   void play();
 

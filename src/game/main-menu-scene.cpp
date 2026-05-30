@@ -3,7 +3,7 @@
 
 namespace Game {
 void MainMenuScene::onEnter() {
-  btnClickSound = std::make_unique<Audio::Sound>("button-hover-click");
+  btnClickSound = std::make_unique<Audio::Sound>("button-hover");
   auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
 
   background = Background{sheet->getSprite("background-brick")};

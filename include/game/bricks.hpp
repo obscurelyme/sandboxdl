@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform/audio.hpp"
 #include "platform/spritesheet.hpp"
 #include <array>
 
@@ -14,7 +15,7 @@ public:
   static void Draw(SDL_Renderer *renderer);
   static void CheckCollisions(const SDL_FRect &ballCollider,
                               SDL_FPoint &ballDirection, float &ballSpeed);
-  static void ResetBrickCount();
+  static void Reset();
 
 private:
   Sprites::Sprite sprite;
@@ -24,5 +25,6 @@ private:
   static int remainingBricks;
   static std::array<Bricks, numBricks> bricks;
   static std::array<std::string, 6> rowColors;
+  static std::unique_ptr<Audio::Sound> brickDestroyedSound;
 };
 } // namespace Game

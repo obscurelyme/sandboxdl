@@ -11,14 +11,11 @@ std::array<Bricks, 102> Bricks::bricks{};
 
 Bricks::Bricks() : hidden(false), position({.x = 0, .y = 0}) {}
 
-void Bricks::draw(SDL_Renderer *renderer) const {
-  sprite.draw(renderer);
-  // TODO: relocate this to a dedicated collider class
-  // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-  // SDL_RenderRect(renderer, &sprite.dest);
-}
+void Bricks::draw(SDL_Renderer *renderer) const { sprite.draw(renderer); }
 
 void Bricks::Create(const Sprites::SpriteSheet *sheet) {
+  brickDestroyedSound = std::make_unique<Audio::Sound>("brick-destroyed");
+
   const int MAX_BRICKS_COLUMNS = 17;
   const int MAX_BRICKS_ROWS = 6;
   const int MARGIN = 50;
@@ -58,6 +55,9 @@ void Bricks::Draw(SDL_Renderer *renderer) {
 }
 
 int Bricks::remainingBricks{numBricks};
+std::unique_ptr<Audio::Sound> Bricks::brickDestroyedSound{nullptr};
+
+void Bricks::Reset() { brickDestroyedSound.reset(); }
 
 void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
                              SDL_FPoint &ballDirection, float &ballSpeed) {
@@ -66,6 +66,7 @@ void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
         SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
       b.hidden = true;
       remainingBricks--;
+      brickDestroyedSound->play();
       ballDirection.y = -ballDirection.y;
       ballSpeed = SDL_min(400.0f, ballSpeed * 1.1f);
       break;

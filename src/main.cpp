@@ -152,11 +152,12 @@ int main(void) {
 
       if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
         running = false;
+        break;
       }
     }
 
     if (!running) {
-      continue;
+      break;
     }
 
     // Update Scene

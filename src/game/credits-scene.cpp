@@ -3,7 +3,7 @@
 
 namespace Game {
 void CreditsScene::onEnter() {
-  btnClickSound = std::make_unique<Audio::Sound>("button-hover-click");
+  btnClickSound = std::make_unique<Audio::Sound>("button-hover");
   auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
 
   background = Background{sheet->getSprite("background-brick")};
@@ -36,6 +36,13 @@ void CreditsScene::onEnter() {
 
   uiLayer.add<UI::Text>(
       SDL_FPoint{
+          .x = 90,
+          .y = 145,
+      },
+      "Nicola (Mackenzie) Greco", UI::FontManager::GetFont("Tiny5"), 16);
+
+  uiLayer.add<UI::Text>(
+      SDL_FPoint{
           .x = 75,
           .y = 200,
       },
@@ -43,10 +50,31 @@ void CreditsScene::onEnter() {
 
   uiLayer.add<UI::Text>(
       SDL_FPoint{
+          .x = 90,
+          .y = 230,
+      },
+      "Buch", UI::FontManager::GetFont("Tiny5"), 16);
+
+  uiLayer.add<UI::Text>(
+      SDL_FPoint{
           .x = 75,
-          .y = 300,
+          .y = 275,
       },
       "Sound:", UI::FontManager::GetFont("Tiny5"), 24);
+
+  uiLayer.add<UI::Text>(
+      SDL_FPoint{
+          .x = 90,
+          .y = 305,
+      },
+      "Kenny", UI::FontManager::GetFont("Tiny5"), 16);
+
+  uiLayer.add<UI::Text>(
+      SDL_FPoint{
+          .x = 90,
+          .y = 335,
+      },
+      "SubspaceAudio", UI::FontManager::GetFont("Tiny5"), 16);
 
   auto *backBtn = uiLayer.add<UI::Button>(
       UI::ButtonProps{

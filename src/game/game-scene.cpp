@@ -5,8 +5,13 @@
 
 namespace Game {
 void GameScene::onEnter() {
-  lostLifeSound = nullptr;
-  gameOverSound = nullptr;
+  SDL_HideCursor();
+  pauseSound = std::make_unique<Audio::Sound>("game-pause");
+  unpauseSound = std::make_unique<Audio::Sound>("game-unpause");
+  lostLifeSound = std::make_unique<Audio::Sound>("lost-life");
+  gameOverSound = std::make_unique<Audio::Sound>("game-over");
+  gameWinSound = std::make_unique<Audio::Sound>("game-win");
+  btnClickSound = std::make_unique<Audio::Sound>("button-hover");
   auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
 
   background = Background{sheet->getSprite("background-brick")};
@@ -42,26 +47,50 @@ void GameScene::onExit() {
   uiLayer.clear();
   pausedLayer.clear();
   gameOverLayer.clear();
+  Bricks::Reset();
+  SDL_ShowCursor();
 }
 
 void GameScene::handleEvent(const SDL_Event &event) {
-  if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+  if (event.type == Events::USER_PLAYER_LOST_LIFE) {
+    lostLifeSound->play();
+  }
+
+  if (event.type == Events::USER_PAUSE) {
+    SDL_ShowCursor();
+    pauseSound->play();
     paused = true;
+  }
+
+  if (event.type == Events::USER_UNPAUSE) {
+    unpauseSound->play();
+    paused = false;
+    SDL_HideCursor();
+  }
+
+  if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST && !paused) {
     Events::Emit(Events::USER_PAUSE, nullptr, nullptr);
   }
 
-  if (event.type == Events::USER_GAME_OVER ||
-      event.type == Events::USER_GAME_WIN) {
+  if (event.type == Events::USER_GAME_OVER) {
     gameOver = true;
+    gameOverSound->play();
+  }
+
+  if (event.type == Events::USER_GAME_WIN) {
+    gameOver = true;
+    gameWinSound->play();
   }
 
   lives.handleEvent(event);
 }
 
 void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
-  if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_ESCAPE)) {
-    if (!gameOver) {
-      paused = !paused;
+  if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_ESCAPE) && !gameOver) {
+    if (!paused) {
+      Events::Emit(Events::USER_PAUSE, nullptr, nullptr);
+    } else {
+      Events::Emit(Events::USER_UNPAUSE, nullptr, nullptr);
     }
   }
 
@@ -122,8 +151,8 @@ void GameScene::buildPausedLayer(Sprites::SpriteSheet *sheet) {
           .fontName = "Tiny5",
       });
 
-  resumeBtn->onHover = [this] {};
-  quitBtn->onHover = [this] {};
+  resumeBtn->onHover = [this] { handleBtnHover(); };
+  quitBtn->onHover = [this] { handleBtnHover(); };
 
   resumeBtn->onPressed = [this] { handleResumeBtnClick(); };
   quitBtn->onPressed = [this] { handleQuitBtnClick(); };
@@ -154,6 +183,9 @@ void GameScene::buildGameOverLayer(Sprites::SpriteSheet *sheet) {
           .fontName = "Tiny5",
       });
 
+  retryBtn->onHover = [this] { handleBtnHover(); };
+  quitBtn->onHover = [this] { handleBtnHover(); };
+
   retryBtn->onPressed = [this] { handleRetryBtnClick(); };
   quitBtn->onPressed = [this] { handleQuitBtnClick(); };
 }
@@ -165,9 +197,12 @@ void GameScene::handleRetryBtnClick() {
 void GameScene::handleResumeBtnClick() {
   paused = false;
   Events::Emit(Events::USER_UNPAUSE, nullptr, nullptr);
+  unpauseSound->play();
 }
 
 void GameScene::handleQuitBtnClick() {
   Events::Emit(Events::USER_QUIT_GAME, nullptr, nullptr);
 }
+
+void GameScene::handleBtnHover() { btnClickSound->play(); }
 } // namespace Game

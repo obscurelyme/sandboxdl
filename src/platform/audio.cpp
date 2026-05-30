@@ -18,6 +18,12 @@ Sound::Sound(const std::string &name) : name(name) {
   }
 }
 
+Sound::~Sound() {
+  SDL_free(buffer);
+  SDL_LogDebug(0, "[Audio::Sound] Freeing audio buffer for sound '%s'",
+               name.c_str());
+}
+
 void Sound::play() {
   SDL_AudioStream *audioStream = SDL_OpenAudioDeviceStream(
       SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
@@ -42,7 +48,8 @@ void Manager::PlaySound(SDL_AudioStream *stream) {
 
 void Manager::Update() {
   for (int i = 0; i < MAX_ONE_SHOT_SOUNDS; i++) {
-    if (SDL_GetAudioStreamQueued(audioStreams[i]) < 0) {
+    if (audioStreams[i] != nullptr &
+        SDL_GetAudioStreamQueued(audioStreams[i]) <= 0) {
       SDL_DestroyAudioStream(audioStreams[i]);
       audioStreams[i] = nullptr;
     }
