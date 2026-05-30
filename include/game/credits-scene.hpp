@@ -1,8 +1,10 @@
 #pragma once
 
+#include "game/background.hpp"
 #include "platform/audio.hpp"
 #include "platform/scene.hpp"
 #include <memory>
+
 
 namespace Game {
 class CreditsScene : public Scene::IScene {
@@ -17,6 +19,7 @@ private:
   void handleButtonFocus();
   void handleBackBtnClick();
 
+  Background background;
   UI::Layer uiLayer;
   std::unique_ptr<Audio::Sound> btnClickSound;
 };

@@ -64,8 +64,14 @@ int main(void) {
   SDL_Window *window;
   SDL_Renderer *renderer;
 
-  success = SDL_CreateWindowAndRenderer("SandboxDL", 1920, 1080, 0, &window,
-                                        &renderer);
+#ifndef NDEBUG
+  int windowFlags = 0;
+#else
+  int windowFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN;
+#endif
+
+  success = SDL_CreateWindowAndRenderer("SandboxDL", 1920, 1080, windowFlags,
+                                        &window, &renderer);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
     return 1;
