@@ -16,14 +16,14 @@ if(WIN32)
   endif()
 endif()
 
-project(sandboxdl VERSION 0.1.0 LANGUAGES CXX)
+project(breakout VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 
-add_executable(sandboxdl 
+add_executable(breakout 
   src/main.cpp
   src/logging/handler.cpp
   src/platform/spritesheet.cpp
@@ -50,16 +50,16 @@ if(WIN32)
     file(TO_CMAKE_PATH "${APP_ICON_PATH_ABS}" APP_ICON_PATH_CMAKE)
     set(WINDOWS_APP_ICON_RC "${CMAKE_BINARY_DIR}/windows-app-icon.rc")
     file(WRITE "${WINDOWS_APP_ICON_RC}" "IDI_APP_ICON ICON \"${APP_ICON_PATH_CMAKE}\"\n")
-    target_sources(sandboxdl PRIVATE "${WINDOWS_APP_ICON_RC}")
+    target_sources(breakout PRIVATE "${WINDOWS_APP_ICON_RC}")
   else()
     message(STATUS "Windows app icon not found at '${APP_ICON_PATH_ABS}'. Set APP_ICON_PATH to a valid .ico file to embed an executable icon.")
   endif()
 endif()
 
-target_include_directories(sandboxdl PRIVATE include)
+target_include_directories(breakout PRIVATE include)
 
 target_link_libraries(
-  sandboxdl 
+  breakout 
   PRIVATE 
   tinyxml2::tinyxml2 
   fmt::fmt 
@@ -68,12 +68,12 @@ target_link_libraries(
 )
 
 if(WIN32)
-  set_target_properties(sandboxdl PROPERTIES
+  set_target_properties(breakout PROPERTIES
     WIN32_EXECUTABLE $<$<CONFIG:Release>:TRUE>
   )
 
   # Keep a windowed Release build (no console) while still using int main(...).
-  target_link_options(sandboxdl PRIVATE
+  target_link_options(breakout PRIVATE
     $<$<CONFIG:Release>:/ENTRY:mainCRTStartup>
   )
 endif()
@@ -81,7 +81,7 @@ endif()
 include(GNUInstallDirs)
 
 # Install the runtime executable and the full assets directory.
-install(TARGETS sandboxdl
+install(TARGETS breakout
   RUNTIME DESTINATION .
 )
 
