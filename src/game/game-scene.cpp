@@ -47,10 +47,7 @@ void GameScene::onExit() {
 void GameScene::handleEvent(const SDL_Event &event) {
   if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
     paused = true;
-  }
-
-  if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
-    paused = false;
+    Events::Emit(Events::USER_PAUSE, nullptr, nullptr);
   }
 
   if (event.type == Events::USER_GAME_OVER ||
@@ -165,7 +162,10 @@ void GameScene::handleRetryBtnClick() {
   Events::Emit(Events::USER_RETRY_GAME, nullptr, nullptr);
 }
 
-void GameScene::handleResumeBtnClick() { paused = false; }
+void GameScene::handleResumeBtnClick() {
+  paused = false;
+  Events::Emit(Events::USER_UNPAUSE, nullptr, nullptr);
+}
 
 void GameScene::handleQuitBtnClick() {
   Events::Emit(Events::USER_QUIT_GAME, nullptr, nullptr);

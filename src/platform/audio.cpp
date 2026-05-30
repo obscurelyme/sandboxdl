@@ -6,7 +6,7 @@
 
 namespace Audio {
 
-Sound::Sound(const std::string &name) : audioStream(nullptr), name(name) {
+Sound::Sound(const std::string &name) : name(name) {
   auto assets = std::filesystem::path(SDL_GetBasePath()) / "assets" / "audio" /
                 std::string(name + ".wav");
 
@@ -18,18 +18,44 @@ Sound::Sound(const std::string &name) : audioStream(nullptr), name(name) {
   }
 }
 
-Sound::~Sound() {
-  if (audioStream) {
-    SDL_DestroyAudioStream(audioStream);
-  }
-}
-
 void Sound::play() {
-  audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-                                          &spec, nullptr, nullptr);
+  SDL_AudioStream *audioStream = SDL_OpenAudioDeviceStream(
+      SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+  SDL_SetAudioStreamGain(audioStream, 0.25);
   SDL_PutAudioStreamData(audioStream, buffer, bufferSize);
   SDL_FlushAudioStream(audioStream);
   SDL_ResumeAudioStreamDevice(audioStream);
+  Manager::PlaySound(audioStream);
+}
+
+std::array<SDL_AudioStream *, Manager::MAX_ONE_SHOT_SOUNDS>
+    Manager::audioStreams{};
+
+void Manager::PlaySound(SDL_AudioStream *stream) {
+  for (int i = 0; i < MAX_ONE_SHOT_SOUNDS; i++) {
+    if (audioStreams[i] == nullptr) {
+      audioStreams[i] = stream;
+      return;
+    }
+  }
+}
+
+void Manager::Update() {
+  for (int i = 0; i < MAX_ONE_SHOT_SOUNDS; i++) {
+    if (SDL_GetAudioStreamQueued(audioStreams[i]) < 0) {
+      SDL_DestroyAudioStream(audioStreams[i]);
+      audioStreams[i] = nullptr;
+    }
+  }
+}
+
+void Manager::Clear() {
+  for (int i = 0; i < MAX_ONE_SHOT_SOUNDS; i++) {
+    if (audioStreams[i] != nullptr) {
+      SDL_DestroyAudioStream(audioStreams[i]);
+      audioStreams[i] = nullptr;
+    }
+  }
 }
 
 } // namespace Audio

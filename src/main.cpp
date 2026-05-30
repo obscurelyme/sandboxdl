@@ -109,13 +109,18 @@ int main(void) {
   Scene::Manager::start(Scene::SceneId::MainMenu);
   /* #endregion */
 
-  DebugGui::FPS fpsCounter{};
+#ifndef NDEBUG
+  auto fpsCounter = std::make_unique<DebugGui::FPS>();
+#endif
+
   uint64_t lastTick = SDL_GetTicks();
   bool paused = false;
   UI::InputContext inputCtx;
   bool running = true;
   while (running) {
-    fpsCounter.update();
+#ifndef NDEBUG
+    fpsCounter->update();
+#endif
     uint64_t now = SDL_GetTicks();
     float deltaTime =
         SDL_min((now - lastTick) / 1000.0f, 0.05f); // capped at 50ms
@@ -127,13 +132,6 @@ int main(void) {
     // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      // TODO: come up with a more decoupled way of handling this...
-      if (event.type == SDL_EVENT_KEY_DOWN) {
-        if (event.key.scancode == SDL_SCANCODE_SLASH) {
-          fpsCounter.tuiReport();
-        }
-      }
-
       if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
         Input::Manager::Reset();
       }
@@ -164,11 +162,19 @@ int main(void) {
 
     // Draw Scene
     Scene::Manager::draw(renderer);
+#ifndef NDEBUG
+    fpsCounter->draw(renderer);
+#endif
 
     SDL_RenderPresent(renderer);
+
+    Audio::Manager::Update();
   }
 
   SDL_LogInfo(0, "Closing application");
+#ifndef NDEBUG
+  fpsCounter.reset();
+#endif
   Scene::Manager::shutdown();
   Sprites::Manager::Clear();
   UI::FontManager::Quit();

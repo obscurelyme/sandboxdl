@@ -1,25 +1,34 @@
 #pragma once
 
 #include <SDL3/SDL_audio.h>
+#include <SDL3/SDL_events.h>
+#include <array>
 #include <string>
 
 namespace Audio {
 class Sound {
 public:
   Sound(const std::string &name);
-  ~Sound();
+  ~Sound() = default;
 
   void play();
 
 private:
-  SDL_AudioStream *audioStream;
   std::string name;
   SDL_AudioSpec spec;
   Uint8 *buffer;
   Uint32 bufferSize;
 };
 
-// TODO: Manager that holds pointers to all one-shot audio streams.
-// In the update loop, for each audio stream that is completed playing
-// remove it from the list and delete it from memory.
+class Manager {
+public:
+  static void PlaySound(SDL_AudioStream *stream);
+  static void HandleEvent(const SDL_Event &event);
+  static void Update();
+  static void Clear();
+
+private:
+  static constexpr int MAX_ONE_SHOT_SOUNDS = 128;
+  static std::array<SDL_AudioStream *, MAX_ONE_SHOT_SOUNDS> audioStreams;
+};
 } // namespace Audio
