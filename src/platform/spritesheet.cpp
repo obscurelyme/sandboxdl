@@ -20,6 +20,7 @@ SpriteSheet::SpriteSheet(const std::string &name, SDL_Renderer *renderer) {
 SpriteSheet::~SpriteSheet() {
   SDL_LogTrace(0, "Freeing texture for SpriteSheet '%s'", name.c_str());
   SDL_DestroyTexture(texture);
+  SDL_DestroySurface(surface);
 }
 
 SDL_Texture *SpriteSheet::getTexture() const { return texture; }
@@ -54,10 +55,9 @@ void SpriteSheet::loadSpriteSheet(SDL_Renderer *renderer,
 
   auto textureAssetPath =
       std::filesystem::path(SDL_GetBasePath()) / "assets" / "sprites" / src;
-  SDL_Surface *surface = SDL_LoadPNG(textureAssetPath.string().c_str());
+  surface = SDL_LoadPNG(textureAssetPath.string().c_str());
   texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-  SDL_DestroySurface(surface);
 
   std::unordered_map<std::string, SDL_FRect> frames{};
   tinyxml2::XMLElement *frame = rootEl->FirstChildElement();
@@ -101,6 +101,70 @@ Sprite SpriteSheet::getSprite(std::string_view name) const {
       this,
       iterator->second,
       {.x = 0, .y = 0, .w = iterator->second.w, .h = iterator->second.h}};
+}
+
+SDL_Surface *SpriteSheet::getSurface(const std::string &name,
+                                     float scale) const {
+  auto iterator = spriteFrames.find(std::string(name));
+  if (iterator == spriteFrames.end()) {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                 "Sprite '%s' not found in spritesheet",
+                 std::string(name).c_str());
+    // NOTE: could not load the sprite, we abort
+    SDL_assert_always(false);
+  }
+
+  if (scale <= 0.0f) {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                "Invalid sprite surface scale (%f) for '%s'; using 1.0f", scale,
+                name.c_str());
+    scale = 1.0f;
+  }
+
+  const SDL_FRect &frame = iterator->second;
+  SDL_Rect srcRect = {
+      .x = static_cast<int>(frame.x),
+      .y = static_cast<int>(frame.y),
+      .w = static_cast<int>(frame.w),
+      .h = static_cast<int>(frame.h),
+  };
+
+  int dstWidth = static_cast<int>(frame.w * scale);
+  int dstHeight = static_cast<int>(frame.h * scale);
+  if (dstWidth < 1) {
+    dstWidth = 1;
+  }
+  if (dstHeight < 1) {
+    dstHeight = 1;
+  }
+
+  SDL_Surface *subSurface =
+      SDL_CreateSurface(dstWidth, dstHeight, surface->format);
+  if (!subSurface) {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                 "Failed to create sub-surface for sprite '%s': %s",
+                 name.c_str(), SDL_GetError());
+    SDL_assert_always(false);
+  }
+
+  SDL_Rect dstRect = {
+      .x = 0,
+      .y = 0,
+      .w = dstWidth,
+      .h = dstHeight,
+  };
+
+  bool blitSuccess = SDL_BlitSurfaceScaled(surface, &srcRect, subSurface,
+                                           &dstRect, SDL_SCALEMODE_NEAREST);
+  if (!blitSuccess) {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                 "Failed to blit sub-surface for sprite '%s': %s", name.c_str(),
+                 SDL_GetError());
+    SDL_DestroySurface(subSurface);
+    SDL_assert_always(false);
+  }
+
+  return subSurface;
 }
 
 Sprite::Sprite(const SpriteSheet *sheet, SDL_FRect coords, SDL_FRect dest)

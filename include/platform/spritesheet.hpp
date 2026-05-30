@@ -25,12 +25,16 @@ public:
   void loadSpriteSheet(SDL_Renderer *renderer, const std::string &filePath);
   Sprite getSprite(std::string_view name) const;
   SDL_Texture *getTexture() const;
+  // Returns a newly allocated cropped surface for the named sprite.
+  // Caller owns the surface and must destroy it with SDL_DestroySurface.
+  SDL_Surface *getSurface(const std::string &name, float scale = 1.0f) const;
 
 private:
   SpriteSheet();
 
   std::string name;
   SDL_Texture *texture;
+  SDL_Surface *surface;
   std::unordered_map<std::string, SDL_FRect> spriteFrames;
 };
 

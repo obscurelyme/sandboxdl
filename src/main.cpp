@@ -87,11 +87,16 @@ int main(void) {
     SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
   }
   /* #endregion */
-
   UI::FontManager::SetRenderer(renderer);
   UI::FontManager::LoadFont("Tiny5");
   Sprites::Manager::SetRenderer(renderer);
   Sprites::Manager::LoadSpriteSheet("breakout-spritesheet");
+
+  auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
+  SDL_Surface *cursorSurface = sheet->getSurface("cursor", 3.5f);
+  SDL_Cursor *cursor = SDL_CreateColorCursor(cursorSurface, 4, 4);
+  SDL_DestroySurface(cursorSurface);
+  SDL_SetCursor(cursor);
 
   /* #region Scenes */
   Scene::Manager::registerScene(Scene::SceneId::MainMenu,
@@ -182,6 +187,7 @@ int main(void) {
 #ifndef NDEBUG
   fpsCounter.reset();
 #endif
+  SDL_DestroyCursor(cursor);
   Scene::Manager::shutdown();
   Sprites::Manager::Clear();
   UI::FontManager::Quit();
