@@ -26,7 +26,8 @@
       "description": "Debug build",
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TRACY_ENABLE": true
       }
     },
     {

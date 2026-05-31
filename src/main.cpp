@@ -17,6 +17,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <tracy/Tracy.hpp>
 
 int main(void) {
   /* #region Init Logic */
@@ -85,6 +86,8 @@ int main(void) {
     SDL_LogError(0, "%s", SDL_GetError());
   } else {
     SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
+    SDL_SetGPUSwapchainParameters(gpu, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                                  SDL_GPU_PRESENTMODE_IMMEDIATE);
   }
   /* #endregion */
   UI::FontManager::SetRenderer(renderer);
@@ -128,6 +131,7 @@ int main(void) {
   UI::InputContext inputCtx;
   bool running = true;
   while (running) {
+    FrameMark;
 #ifndef NDEBUG
     fpsCounter->update();
 #endif
@@ -137,7 +141,9 @@ int main(void) {
     lastTick = now;
 
     // Clear previous frame input
-    Input::Manager::Swap();
+    {
+      ZoneScopedN("Input Swap") Input::Manager::Swap();
+    }
 
     // Poll input
     SDL_Event event;
@@ -150,9 +156,12 @@ int main(void) {
         lastTick = SDL_GetTicks();
       }
 
-      Input::Manager::HandleInputEvent(renderer, event);
-      inputCtx = UI::SnapshotCtx();
-      Scene::Manager::handleEvent(event);
+      {
+        ZoneScopedN("Handle Input Event")
+            Input::Manager::HandleInputEvent(renderer, event);
+        inputCtx = UI::SnapshotCtx();
+        Scene::Manager::handleEvent(event);
+      }
 
       if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
         running = false;
@@ -165,19 +174,24 @@ int main(void) {
     }
 
     // Update Scene
-    Scene::Manager::update(deltaTime, inputCtx);
+    {
+      ZoneScopedN("Scene Update") Scene::Manager::update(deltaTime, inputCtx);
+    }
 
     // Render frame
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(renderer);
+    {
+      ZoneScopedN("Render")
+          SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      SDL_RenderClear(renderer);
 
-    // Draw Scene
-    Scene::Manager::draw(renderer);
+      // Draw Scene
+      Scene::Manager::draw(renderer);
 #ifndef NDEBUG
-    fpsCounter->draw(renderer);
+      fpsCounter->draw(renderer);
 #endif
 
-    SDL_RenderPresent(renderer);
+      SDL_RenderPresent(renderer);
+    }
   }
 
   SDL_LogInfo(0, "Closing application");

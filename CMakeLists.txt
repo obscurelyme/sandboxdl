@@ -18,6 +18,27 @@ endif()
 
 project(breakout VERSION 0.1.0 LANGUAGES CXX)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  include(FetchContent)
+
+  FetchContent_Declare(
+    tracy
+    GIT_REPOSITORY  https://github.com/wolfpld/tracy.git
+    GIT_TAG         master
+    GIT_SHALLOW     TRUE
+    GIT_PROGRESS    TRUE
+  )
+
+  FetchContent_MakeAvailable(tracy)
+
+  target_compile_options(
+    TracyClient 
+    PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/W0 /WX->
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w -Wno-error>
+  )
+endif()
+
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
@@ -67,6 +88,14 @@ target_link_libraries(
   SDL3_ttf::SDL3_ttf
 )
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_link_libraries(
+    breakout
+    PRIVATE
+    TracyClient
+  )
+endif()
+
 if(WIN32)
   set_target_properties(breakout PROPERTIES
     WIN32_EXECUTABLE $<$<CONFIG:Release>:TRUE>
@@ -77,8 +106,6 @@ if(WIN32)
     $<$<CONFIG:Release>:/ENTRY:mainCRTStartup>
   )
 endif()
-
-include(GNUInstallDirs)
 
 # Install the runtime executable and the full assets directory.
 install(TARGETS breakout
