@@ -14,10 +14,20 @@ public:
   void play();
 
 private:
+  struct Voice {
+    SDL_AudioStream *stream{nullptr};
+  };
+
   std::string name;
   SDL_AudioSpec spec;
   Uint8 *buffer;
   Uint32 bufferSize;
+
+  std::array<Voice, 8> voices{};
+  int nextVoiceIndex{0};
+
+  int findIdleVoice() const;
+  void destroyVoices();
 };
 
 class Manager {

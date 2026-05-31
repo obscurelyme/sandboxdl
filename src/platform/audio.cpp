@@ -15,23 +15,102 @@ Sound::Sound(const std::string &name) : name(name) {
   if (!success) {
     SDL_LogError(0, "[Audio::Sound] %s", SDL_GetError());
     SDL_assert_always(false);
+    return;
+  }
+
+  voices.fill(Voice{
+      .stream = nullptr,
+  });
+
+  for (int i = 0; i < 8; i++) {
+    SDL_AudioStream *stream = SDL_OpenAudioDeviceStream(
+        SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+    if (!stream) {
+      SDL_LogError(0, "[Audio::Sound] Failed to open stream for '%s': '%s'",
+                   name.c_str(), SDL_GetError());
+      SDL_assert_always(false);
+      return;
+    }
+
+    if (!SDL_SetAudioStreamGain(stream, 0.25f)) {
+      SDL_LogWarn(0, "[Audio::Sound] Failed to set gain for '%s': %s",
+                  name.c_str(), SDL_GetError());
+    }
+
+    if (!SDL_ResumeAudioStreamDevice(stream)) {
+      SDL_LogError(0,
+                   "[Audio::Sound] Failed to resume stream device for '%s': %s",
+                   name.c_str(), SDL_GetError());
+      SDL_assert_always(false);
+    }
+
+    voices[i].stream = stream;
   }
 }
 
 Sound::~Sound() {
-  SDL_free(buffer);
-  SDL_LogDebug(0, "[Audio::Sound] Freeing audio buffer for sound '%s'",
+  for (auto &voice : voices) {
+    if (voice.stream) {
+      SDL_DestroyAudioStream(voice.stream);
+      voice.stream = nullptr;
+    }
+  }
+
+  if (buffer) {
+    SDL_free(buffer);
+    buffer = nullptr;
+  }
+
+  SDL_LogDebug(0, "[Audio::Sound] Freed audio resources for sound '%s'",
                name.c_str());
 }
 
 void Sound::play() {
-  SDL_AudioStream *audioStream = SDL_OpenAudioDeviceStream(
-      SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
-  SDL_SetAudioStreamGain(audioStream, 0.25);
-  SDL_PutAudioStreamData(audioStream, buffer, bufferSize);
-  SDL_FlushAudioStream(audioStream);
-  SDL_ResumeAudioStreamDevice(audioStream);
-  Manager::PlaySound(audioStream);
+  int voiceIndex = findIdleVoice();
+  if (voiceIndex < 0) {
+    // NOTE: all voices are taken, must wait. Maybe will implement voice
+    // stealing later.
+    return;
+  }
+  SDL_AudioStream *stream = voices[voiceIndex].stream;
+
+  if (!stream || !buffer || bufferSize == 0) {
+    SDL_LogWarn(0, "[Audio::Sound] Cannot play '%s': stream/buffer invalid",
+                name.c_str());
+    return;
+  }
+
+  if (SDL_GetAudioStreamQueued(stream) > 0) {
+    if (!SDL_ClearAudioStream(stream)) {
+    }
+  }
+
+  if (!SDL_PutAudioStreamData(stream, buffer, bufferSize)) {
+    SDL_LogError(0, "[Audio::Sound] Failed to queue '%s': '%s", name.c_str(),
+                 SDL_GetError());
+    return;
+  }
+
+  if (!SDL_FlushAudioStream(stream)) {
+    SDL_LogWarn(0, "[Audio::Sound] Failed to flush '%s': '%s'", name.c_str(),
+                SDL_GetError());
+    return;
+  }
+}
+
+int Sound::findIdleVoice() const {
+  for (int i = 0; i < 8; i++) {
+    SDL_AudioStream *stream = voices[i].stream;
+    if (!stream) {
+      continue;
+    }
+
+    if (SDL_GetAudioStreamQueued(stream) <= 0) {
+      return i;
+    }
+  }
+
+  return -1;
 }
 
 std::array<SDL_AudioStream *, Manager::MAX_ONE_SHOT_SOUNDS>

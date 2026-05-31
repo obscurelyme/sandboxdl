@@ -178,8 +178,6 @@ int main(void) {
 #endif
 
     SDL_RenderPresent(renderer);
-
-    Audio::Manager::Update();
   }
 
   SDL_LogInfo(0, "Closing application");

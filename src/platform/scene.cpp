@@ -42,7 +42,6 @@ void Manager::start(SceneId scene) {
 }
 
 void Manager::shutdown() {
-  Audio::Manager::Clear();
   if (currentScene != nullptr) {
     currentScene->onExit();
   }
@@ -79,7 +78,6 @@ void Manager::update(float deltaTime, const UI::InputContext &ctx) {
 void Manager::draw(SDL_Renderer *renderer) { currentScene->draw(renderer); }
 
 void Manager::transitionTo(SceneId sceneId) {
-  Audio::Manager::Clear();
   currentScene->onExit();
   currentScene = scenes.at(sceneId).get();
   currentScene->onEnter();

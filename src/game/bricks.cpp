@@ -66,7 +66,9 @@ void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
         SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
       b.hidden = true;
       remainingBricks--;
+      Uint64 startTime = SDL_GetTicks();
       brickDestroyedSound->play();
+      SDL_LogInfo(0, "[Bricks::Collision] Time to Play sound: %dms", SDL_GetTicks() - startTime);
       ballDirection.y = -ballDirection.y;
       ballSpeed = SDL_min(400.0f, ballSpeed * 1.1f);
       break;
