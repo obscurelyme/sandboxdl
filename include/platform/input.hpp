@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform/profiler.hpp"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_render.h>
@@ -30,6 +31,7 @@ public:
   }
 
   void update(const SDL_KeyboardEvent &e) {
+    SDL_PROFILE_ZONE("KeyboardState::update");
     if (e.scancode >= 0 && e.scancode < SDL_SCANCODE_COUNT) {
       current[e.scancode] = e.type == SDL_EVENT_KEY_DOWN;
     }
@@ -79,12 +81,14 @@ public:
   }
 
   void updateButton(const SDL_MouseButtonEvent &e) {
+    SDL_PROFILE_ZONE("MouseState::updateButton");
     if (e.button >= 1 && e.button <= SDL_BUTTON_X2) {
       current[e.button] = e.type == SDL_EVENT_MOUSE_BUTTON_DOWN;
     }
   }
 
   void updateCoords(SDL_Renderer *renderer, const SDL_MouseMotionEvent &e) {
+    SDL_PROFILE_ZONE("MouseState::updateCoords");
     windowCoords.x = e.x;
     windowCoords.y = e.y;
     SDL_RenderCoordinatesFromWindow(renderer, windowCoords.x, windowCoords.y,

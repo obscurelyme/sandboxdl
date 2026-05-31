@@ -1,4 +1,5 @@
 #include "platform/audio.hpp"
+#include "platform/profiler.hpp"
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
@@ -7,6 +8,7 @@
 namespace Audio {
 
 Sound::Sound(const std::string &name) : name(name) {
+  SDL_PROFILE_ZONE("Audio::Sound::Constructor");
   auto assets = std::filesystem::path(SDL_GetBasePath()) / "assets" / "audio" /
                 std::string(name + ".wav");
 
@@ -49,6 +51,7 @@ Sound::Sound(const std::string &name) : name(name) {
 }
 
 Sound::~Sound() {
+  SDL_PROFILE_ZONE("Audio::Sound::Destructor");
   for (auto &voice : voices) {
     if (voice.stream) {
       SDL_DestroyAudioStream(voice.stream);
@@ -66,6 +69,7 @@ Sound::~Sound() {
 }
 
 void Sound::play() {
+  SDL_PROFILE_ZONE("Audio::Sound::play");
   int voiceIndex = findIdleVoice();
   if (voiceIndex < 0) {
     // NOTE: all voices are taken, must wait. Maybe will implement voice
@@ -99,6 +103,7 @@ void Sound::play() {
 }
 
 int Sound::findIdleVoice() const {
+  SDL_PROFILE_ZONE("Audio::Sound::findIdleVoice");
   for (int i = 0; i < 8; i++) {
     SDL_AudioStream *stream = voices[i].stream;
     if (!stream) {

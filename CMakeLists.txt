@@ -88,6 +88,13 @@ target_link_libraries(
   SDL3_ttf::SDL3_ttf
 )
 
+if (BREAKOUT_ENABLE_PROFILING)
+  message("-- BREAKOUT_ENABLE_PROFILING: ON")
+  target_compile_definitions(breakout PRIVATE -DBREAKOUT_ENABLE_PROFILING)
+else()
+  message("-- BREAKOUT_ENABLE_PROFILING: OFF")
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(
     breakout

@@ -51,6 +51,8 @@ public:
   float height() const;
   void colorMod(float red, float green, float blue);
   void alphaMod(float alpha);
+  SDL_Texture *texture() const;
+  const SDL_FRect &source() const;
   void draw(SDL_Renderer *) const;
 
 private:

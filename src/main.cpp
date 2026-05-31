@@ -5,6 +5,7 @@
 #include "platform/debug-gui.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
+#include "platform/profiler.hpp"
 #include "platform/scene.hpp"
 #include "platform/spritesheet.hpp"
 #include "platform/text.hpp"
@@ -17,7 +18,6 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
-#include <tracy/Tracy.hpp>
 
 int main(void) {
   /* #region Init Logic */
@@ -131,7 +131,7 @@ int main(void) {
   UI::InputContext inputCtx;
   bool running = true;
   while (running) {
-    FrameMark;
+    SDL_PROFILE_FRAME();
 #ifndef NDEBUG
     fpsCounter->update();
 #endif
@@ -142,7 +142,8 @@ int main(void) {
 
     // Clear previous frame input
     {
-      ZoneScopedN("Input Swap") Input::Manager::Swap();
+      SDL_PROFILE_ZONE("Input Swap");
+      Input::Manager::Swap();
     }
 
     // Poll input
@@ -157,8 +158,8 @@ int main(void) {
       }
 
       {
-        ZoneScopedN("Handle Input Event")
-            Input::Manager::HandleInputEvent(renderer, event);
+        SDL_PROFILE_ZONE("Handle Input Event");
+        Input::Manager::HandleInputEvent(renderer, event);
         inputCtx = UI::SnapshotCtx();
         Scene::Manager::handleEvent(event);
       }
@@ -175,13 +176,14 @@ int main(void) {
 
     // Update Scene
     {
-      ZoneScopedN("Scene Update") Scene::Manager::update(deltaTime, inputCtx);
+      SDL_PROFILE_ZONE("Scene Update");
+      Scene::Manager::update(deltaTime, inputCtx);
     }
 
     // Render frame
     {
-      ZoneScopedN("Render")
-          SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      SDL_PROFILE_ZONE("Render");
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
       SDL_RenderClear(renderer);
 
       // Draw Scene

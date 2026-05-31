@@ -1,6 +1,6 @@
 #include "platform/scene.hpp"
-#include "platform/audio.hpp"
 #include "platform/events.hpp"
+#include "platform/profiler.hpp"
 
 namespace Scene {
 std::unordered_map<SceneId, std::unique_ptr<IScene>> Manager::scenes{};
@@ -36,12 +36,14 @@ void Manager::registerTransition(Uint32 sdlUserEvent, SceneId targetScene) {
 }
 
 void Manager::start(SceneId scene) {
+  SDL_PROFILE_ZONE("Scene::Manager::start");
   currentSceneId = scene;
   currentScene = scenes.at(scene).get();
   currentScene->onEnter();
 }
 
 void Manager::shutdown() {
+  SDL_PROFILE_ZONE("Scene::Manager::shutdown");
   if (currentScene != nullptr) {
     currentScene->onExit();
   }
@@ -55,6 +57,7 @@ void Manager::shutdown() {
 }
 
 void Manager::handleEvent(const SDL_Event &event) {
+  SDL_PROFILE_ZONE("Scene::Manager::handleEvent");
   if (event.type == Events::USER_QUIT_APP) {
     shutdown();
     return;
@@ -68,6 +71,7 @@ void Manager::handleEvent(const SDL_Event &event) {
 }
 
 void Manager::update(float deltaTime, const UI::InputContext &ctx) {
+  SDL_PROFILE_ZONE("Scene::Manager::update");
   if (pendingScene.has_value()) {
     transitionTo(pendingScene.value());
   }
@@ -75,9 +79,13 @@ void Manager::update(float deltaTime, const UI::InputContext &ctx) {
   currentScene->update(deltaTime, ctx);
 }
 
-void Manager::draw(SDL_Renderer *renderer) { currentScene->draw(renderer); }
+void Manager::draw(SDL_Renderer *renderer) {
+  SDL_PROFILE_ZONE("Scene::Manager::draw");
+  currentScene->draw(renderer);
+}
 
 void Manager::transitionTo(SceneId sceneId) {
+  SDL_PROFILE_ZONE("Scene::Manager::transitionTo");
   currentScene->onExit();
   currentScene = scenes.at(sceneId).get();
   currentScene->onEnter();

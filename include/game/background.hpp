@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/spritesheet.hpp"
+#include <vector>
 
 namespace Game {
 class Background {
@@ -10,5 +11,10 @@ public:
   void draw(SDL_Renderer *renderer);
 
   Sprites::Sprite backgroundBrick;
+
+private:
+  void buildBatch();
+  std::vector<SDL_Vertex> batchedVertices;
+  std::vector<int> batchedIndices;
 };
 } // namespace Game

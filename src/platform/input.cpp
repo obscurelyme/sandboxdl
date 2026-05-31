@@ -11,6 +11,7 @@ const KeyboardState &Manager::Keyboard() { return keyboardState; }
 const MouseState &Manager::Mouse() { return mouseState; }
 
 void Manager::HandleInputEvent(SDL_Renderer *renderer, const SDL_Event &event) {
+  SDL_PROFILE_ZONE("Input::Manager::HandleInputEvent");
   switch (event.type) {
   case SDL_EVENT_KEY_UP:
   case SDL_EVENT_KEY_DOWN:
@@ -32,6 +33,7 @@ void Manager::HandleInputEvent(SDL_Renderer *renderer, const SDL_Event &event) {
 }
 
 void Manager::Reset() {
+  SDL_PROFILE_ZONE("Input::Manager::Reset");
   keyboardState.reset();
   mouseState.reset();
 }

@@ -1,5 +1,6 @@
 #include "game/bricks.hpp"
 #include "platform/events.hpp"
+#include "platform/profiler.hpp"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
@@ -14,6 +15,7 @@ Bricks::Bricks() : hidden(false), position({.x = 0, .y = 0}) {}
 void Bricks::draw(SDL_Renderer *renderer) const { sprite.draw(renderer); }
 
 void Bricks::Create(const Sprites::SpriteSheet *sheet) {
+  SDL_PROFILE_ZONE("Game::Bricks::Create");
   brickDestroyedSound = std::make_unique<Audio::Sound>("brick-destroyed");
 
   const int MAX_BRICKS_COLUMNS = 17;
@@ -47,6 +49,7 @@ void Bricks::Create(const Sprites::SpriteSheet *sheet) {
 }
 
 void Bricks::Draw(SDL_Renderer *renderer) {
+  SDL_PROFILE_ZONE("Game::Bricks::Draw");
   for (Bricks &b : bricks) {
     if (!b.hidden) {
       b.draw(renderer);
@@ -61,6 +64,7 @@ void Bricks::Reset() { brickDestroyedSound.reset(); }
 
 void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
                              SDL_FPoint &ballDirection, float &ballSpeed) {
+  SDL_PROFILE_ZONE("Game::Bricks::CheckCollisions");
   for (Bricks &b : bricks) {
     if (!b.hidden &&
         SDL_HasRectIntersectionFloat(&ballCollider, &b.sprite.dest)) {
@@ -68,7 +72,8 @@ void Bricks::CheckCollisions(const SDL_FRect &ballCollider,
       remainingBricks--;
       Uint64 startTime = SDL_GetTicks();
       brickDestroyedSound->play();
-      SDL_LogInfo(0, "[Bricks::Collision] Time to Play sound: %dms", SDL_GetTicks() - startTime);
+      SDL_LogInfo(0, "[Bricks::Collision] Time to Play sound: %dms",
+                  SDL_GetTicks() - startTime);
       ballDirection.y = -ballDirection.y;
       ballSpeed = SDL_min(400.0f, ballSpeed * 1.1f);
       break;

@@ -2,9 +2,11 @@
 #include "game/bricks.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
+#include "platform/profiler.hpp"
 
 namespace Game {
 void GameScene::onEnter() {
+  SDL_PROFILE_ZONE("Game::GameScene::onEnter");
   SDL_HideCursor();
   pauseSound = std::make_unique<Audio::Sound>("game-pause");
   unpauseSound = std::make_unique<Audio::Sound>("game-unpause");
@@ -112,6 +114,7 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
 }
 
 void GameScene::draw(SDL_Renderer *renderer) {
+  SDL_PROFILE_ZONE("Game::GameScene::draw");
   background.draw(renderer);
   uiLayer.draw(renderer);
   lives.draw(renderer);
