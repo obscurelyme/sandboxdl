@@ -2,7 +2,8 @@
   "dependencies": [
     "fmt",
     "sdl3",
+    "sdl3-ttf",
     "tinyxml2",
-    "sdl3-ttf"
+    "box2d"
   ]
 }

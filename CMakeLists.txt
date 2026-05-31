@@ -39,6 +39,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   )
 endif()
 
+find_package(box2d CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
@@ -86,6 +87,7 @@ target_link_libraries(
   fmt::fmt 
   SDL3::SDL3 
   SDL3_ttf::SDL3_ttf
+  box2d::box2d
 )
 
 if (BREAKOUT_ENABLE_PROFILING)
