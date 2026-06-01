@@ -9,6 +9,10 @@ IScene *Manager::currentScene = nullptr;
 SceneId Manager::currentSceneId = SceneId::None;
 std::optional<SceneId> Manager::pendingScene{};
 
+void IScene::fixedUpdate(float) {
+  // no-op
+}
+
 void Manager::registerScene(SceneId sceneId, std::unique_ptr<IScene> scene) {
   auto iterator = scenes.find(sceneId);
   if (iterator != scenes.end()) {
@@ -79,9 +83,15 @@ void Manager::update(float deltaTime, const UI::InputContext &ctx) {
   currentScene->update(deltaTime, ctx);
 }
 
-void Manager::draw(SDL_Renderer *renderer) {
+void Manager::fixedUpdate(float deltaTime) {
+  SDL_PROFILE_ZONE("Scene::Manager::fixedUpdate");
+
+  currentScene->fixedUpdate(deltaTime);
+}
+
+void Manager::draw(SDL_Renderer *renderer, float alpha) {
   SDL_PROFILE_ZONE("Scene::Manager::draw");
-  currentScene->draw(renderer);
+  currentScene->draw(renderer, alpha);
 }
 
 void Manager::transitionTo(SceneId sceneId) {

@@ -119,17 +119,15 @@ void CreditsScene::onEnter() {
     soundArtistLink2->setColor(defaultColor);
   };
 
-  progLink->onPressed = [this] {
-    SDL_OpenURL("https://github.com/obscurelyme");
-  };
-  artistLink->onPressed = [this] {
+  progLink->onPressed = [] { SDL_OpenURL("https://github.com/obscurelyme"); };
+  artistLink->onPressed = [] {
     SDL_OpenURL("https://opengameart.org/users/buch");
   };
-  soundArtistLink1->onPressed = [this] {
+  soundArtistLink1->onPressed = [] {
     SDL_OpenURL("https://opengameart.org/content/"
                 "51-ui-sound-effects-buttons-switches-and-clicks");
   };
-  soundArtistLink2->onPressed = [this] {
+  soundArtistLink2->onPressed = [] {
     SDL_OpenURL(
         "https://opengameart.org/content/512-sound-effects-8-bit-style");
   };
@@ -145,7 +143,7 @@ void CreditsScene::update(float deltaTime, const UI::InputContext &ctx) {
   uiLayer.update(ctx);
 }
 
-void CreditsScene::draw(SDL_Renderer *renderer) {
+void CreditsScene::draw(SDL_Renderer *renderer, float alpha) {
   background.draw(renderer);
   uiLayer.draw(renderer);
 }

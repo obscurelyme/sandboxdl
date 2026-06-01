@@ -12,7 +12,7 @@ public:
   void onExit() override;
   void handleEvent(const SDL_Event &event) override;
   void update(float deltaTime, const UI::InputContext &ctx) override;
-  void draw(SDL_Renderer *renderer) override;
+  void draw(SDL_Renderer *renderer, float alpha) override;
 
 private:
   void handleButtonFocus();

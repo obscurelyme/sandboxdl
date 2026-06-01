@@ -17,7 +17,8 @@ public:
   void onExit() override;
   void handleEvent(const SDL_Event &event) override;
   void update(float deltaTime, const UI::InputContext &ctx) override;
-  void draw(SDL_Renderer *renderer) override;
+  void fixedUpdate(float deltaTime) override;
+  void draw(SDL_Renderer *renderer, float alpha) override;
 
 private:
   void buildPausedLayer(Sprites::SpriteSheet *);
@@ -28,6 +29,7 @@ private:
   void handleQuitBtnClick();
 
   void handleBtnHover();
+  void _onEnter();
 
   bool paused{false};
   bool gameOver{false};

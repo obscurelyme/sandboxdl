@@ -39,12 +39,7 @@ void Bumper::update(float deltaTime) {
   sprite.dest.y = position.y;
 }
 
-void Bumper::draw(SDL_Renderer *renderer) const {
-  sprite.draw(renderer);
-  // TODO: relocate this to a dedicated collider class
-  // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-  // SDL_RenderRect(renderer, &sprite.dest);
-}
+void Bumper::draw(SDL_Renderer *renderer) const { sprite.draw(renderer); }
 
 SDL_FRect Bumper::collider() const { return sprite.dest; }
 } // namespace Game

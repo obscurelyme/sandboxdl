@@ -63,6 +63,7 @@ add_executable(breakout
   src/game/game-scene.cpp
   src/game/background.cpp
   src/game/player-lives.cpp
+  src/platform/physics.cpp
 )
 
 if(WIN32)

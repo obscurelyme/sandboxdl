@@ -13,7 +13,8 @@ public:
   virtual void onExit() = 0;
   virtual void handleEvent(const SDL_Event &event) = 0;
   virtual void update(float deltaTime, const UI::InputContext &ctx) = 0;
-  virtual void draw(SDL_Renderer *renderer) = 0;
+  virtual void fixedUpdate(float deltaTime);
+  virtual void draw(SDL_Renderer *renderer, float alpha) = 0;
 };
 
 enum SceneId { None, MainMenu, Game, Credits };
@@ -26,7 +27,8 @@ public:
   static void shutdown();
   static void handleEvent(const SDL_Event &event);
   static void update(float deltaTime, const UI::InputContext &ctx);
-  static void draw(SDL_Renderer *renderer);
+  static void fixedUpdate(float deltaTime);
+  static void draw(SDL_Renderer *renderer, float alpha);
 
 private:
   static void transitionTo(SceneId sceneId);

@@ -1,12 +1,29 @@
 #include "game/game-scene.hpp"
-#include "game/bricks.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
+#include "platform/physics.hpp"
 #include "platform/profiler.hpp"
+#include <box2d/box2d.h>
+#include <box2d/math_functions.h>
 
 namespace Game {
-void GameScene::onEnter() {
-  SDL_PROFILE_ZONE("Game::GameScene::onEnter");
+b2BodyId groundId;
+b2BodyId topId;
+b2BodyId leftId;
+b2BodyId rightId;
+b2BodyId bodyId;
+constexpr float TEST_BOX_HALF_WIDTH = 0.15f;
+constexpr float TEST_BOX_HALF_HEIGHT = 0.15f;
+const float FULL_WIDTH_UNITS = Physics::toUnits(800);
+const float FULL_HEIGHT_UNITS = Physics::toUnits(450);
+const float HALF_WIDTH_UNITS = Physics::toUnits(800) * 0.5f;
+const float HALF_HEIGHT_UNITS = Physics::toUnits(450) * 0.5f;
+b2Vec2 ballPosition;
+b2Circle circle;
+SDL_FRect leftRenderRect{};
+SDL_FRect rightRenderRect{};
+
+void GameScene::_onEnter() {
   SDL_HideCursor();
   pauseSound = std::make_unique<Audio::Sound>("game-pause");
   unpauseSound = std::make_unique<Audio::Sound>("game-unpause");
@@ -28,8 +45,6 @@ void GameScene::onEnter() {
   buildPausedLayer(sheet);
   buildGameOverLayer(sheet);
 
-  Game::Bricks::Create(sheet);
-
   SDL_FPoint initBumperPosition{
       .x = 800.f / 2,
       .y = 400,
@@ -43,13 +58,80 @@ void GameScene::onEnter() {
   ball = Ball{sheet->getSprite("gold-ball"), initBallPosition};
 }
 
+void GameScene::onEnter() {
+  SDL_PROFILE_ZONE("Game::GameScene::onEnter");
+  _onEnter();
+
+  Physics::World::Create();
+  auto worldId = Physics::World::Id();
+
+  // Bottom
+  b2BodyDef groundBodyDef = b2DefaultBodyDef();
+  groundBodyDef.position = b2Vec2{.x = 8, .y = 9.2f};
+  groundId = b2CreateBody(worldId, &groundBodyDef);
+
+  b2ShapeDef groundShapeDef = b2DefaultShapeDef();
+  b2Polygon groundBox = b2MakeBox(8.0f, 0.2f);
+  b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
+
+  // Top
+  b2BodyDef topBodyDef = b2DefaultBodyDef();
+  topBodyDef.position = b2Vec2{.x = 8, .y = -0.2f};
+  topId = b2CreateBody(worldId, &topBodyDef);
+
+  b2ShapeDef topShapeDef = b2DefaultShapeDef();
+  b2Polygon topBox = b2MakeBox(8.0f, 0.2f);
+  b2CreatePolygonShape(topId, &topShapeDef, &topBox);
+
+  // Left
+  b2BodyDef leftBodyDef = b2DefaultBodyDef();
+  leftBodyDef.position =
+      b2Vec2{.x = Physics::toUnits(100), .y = HALF_HEIGHT_UNITS};
+  leftId = b2CreateBody(worldId, &leftBodyDef);
+
+  b2ShapeDef leftShapeDef = b2DefaultShapeDef();
+  b2Polygon leftBox = b2MakeBox(0.2f, HALF_HEIGHT_UNITS);
+  b2CreatePolygonShape(leftId, &leftShapeDef, &leftBox);
+
+  leftRenderRect = Physics::toRenderRect(b2Body_GetPosition(leftId), 0.2f,
+                                         HALF_HEIGHT_UNITS);
+
+  // Right
+  b2BodyDef rightBodyDef = b2DefaultBodyDef();
+  rightBodyDef.position =
+      b2Vec2{.x = Physics::toUnits(800 * .5), .y = HALF_HEIGHT_UNITS};
+  rightId = b2CreateBody(worldId, &rightBodyDef);
+
+  b2ShapeDef rightShapeDef = b2DefaultShapeDef();
+  b2Polygon rightBox = b2MakeBox(0.2f, HALF_HEIGHT_UNITS);
+  b2CreatePolygonShape(rightId, &rightShapeDef, &rightBox);
+  rightRenderRect = Physics::toRenderRect(b2Body_GetPosition(rightId), 0.2f,
+                                          HALF_HEIGHT_UNITS);
+
+  // Ball
+  b2BodyDef bodyDef = b2DefaultBodyDef();
+  bodyDef.type = b2_dynamicBody;
+  bodyDef.position = b2Vec2{.x = 4.0f, .y = 2.0f};
+  bodyDef.isBullet = true;
+  bodyId = b2CreateBody(worldId, &bodyDef);
+
+  circle.center = b2Vec2{.x = 0, .y = 0};
+  circle.radius = Physics::toUnits(4);
+  b2ShapeDef shapeDef = b2DefaultShapeDef();
+  shapeDef.density = 1.0f;
+  shapeDef.material.friction = 0.3f;
+  shapeDef.material.restitution = 0.2f;
+  shapeDef.material.rollingResistance = 0;
+  b2CreateCircleShape(bodyId, &shapeDef, &circle);
+}
+
 void GameScene::onExit() {
   gameOver = false;
   paused = false;
   uiLayer.clear();
   pausedLayer.clear();
   gameOverLayer.clear();
-  Bricks::Reset();
+  Physics::World::Destroy();
   SDL_ShowCursor();
 }
 
@@ -98,9 +180,29 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
     }
   }
 
+  if (Input::Manager::Mouse().isLeftButtonPressed()) {
+    // NOTE: left bumper move
+    b2Body_ApplyForceToCenter(bodyId, b2Vec2{.x = -1, .y = -15}, true);
+  }
+
+  if (Input::Manager::Mouse().isRightButtonPressed()) {
+    // NOTE: right bumper move
+    b2Body_ApplyForceToCenter(bodyId, b2Vec2{.x = 1, .y = -15}, true);
+  }
+
+  if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_Q)) {
+    b2Body_SetTransform(bodyId,
+                        b2Vec2{
+                            .x = Physics::toUnits(800 * .5),
+                            .y = Physics::toUnits(450 * .5),
+                        },
+                        Physics::deg2rot(0));
+    b2Body_SetAwake(bodyId, true);
+  }
+
   if (!paused && !gameOver) {
-    bumper.update(deltaTime);
-    ball.update(deltaTime, bumper.collider());
+    // bumper.update(deltaTime);
+    // ball.update(deltaTime, bumper.collider());
   }
 
   uiLayer.update(ctx);
@@ -113,14 +215,28 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
   }
 }
 
-void GameScene::draw(SDL_Renderer *renderer) {
+void GameScene::fixedUpdate(float deltaTime) {
+  if (!paused) {
+    Physics::World::Simulate(deltaTime);
+    ballPosition = b2Body_GetPosition(bodyId);
+    SDL_LogInfo(0, "[GameScene::fixedUpdate] Position (%.2f, %.2f)",
+                ballPosition.x, ballPosition.y);
+  }
+}
+
+void GameScene::draw(SDL_Renderer *renderer, float _alpha) {
   SDL_PROFILE_ZONE("Game::GameScene::draw");
   background.draw(renderer);
   uiLayer.draw(renderer);
   lives.draw(renderer);
   ball.draw(renderer);
   bumper.draw(renderer);
-  Game::Bricks::Draw(renderer);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+  Physics::drawCircle(renderer, ballPosition, circle.radius,
+                      SDL_Color{.r = 255, .g = 255, .b = 255, .a = 255});
+  SDL_RenderRect(renderer, &leftRenderRect);
+  SDL_RenderRect(renderer, &rightRenderRect);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 
   if (paused) {
     pausedLayer.draw(renderer);

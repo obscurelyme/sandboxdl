@@ -77,7 +77,7 @@ void MainMenuScene::update(float deltaTime, const UI::InputContext &ctx) {
   uiLayer.update(ctx);
 }
 
-void MainMenuScene::draw(SDL_Renderer *renderer) {
+void MainMenuScene::draw(SDL_Renderer *renderer, float alpha) {
   background.draw(renderer);
   uiLayer.draw(renderer);
 }

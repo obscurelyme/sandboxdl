@@ -5,6 +5,7 @@
 #include "platform/debug-gui.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
+#include "platform/physics.hpp"
 #include "platform/profiler.hpp"
 #include "platform/scene.hpp"
 #include "platform/spritesheet.hpp"
@@ -120,24 +121,31 @@ int main(void) {
   Scene::Manager::registerTransition(Events::USER_RETRY_GAME,
                                      Scene::SceneId::Game);
 
-  Scene::Manager::start(Scene::SceneId::MainMenu);
+  Scene::Manager::start(Scene::SceneId::Game);
   /* #endregion */
 
 #ifndef NDEBUG
   auto fpsCounter = std::make_unique<DebugGui::FPS>();
 #endif
 
-  uint64_t lastTick = SDL_GetTicks();
+  const Uint64 MAX_STEPS_PER_FRAME = 5;
+  const float FIXED_DELTA_TIME = Physics::World::FIXED_TIME_STEP;
+  Uint64 lastTick = SDL_GetTicks();
+  Uint64 steps = 0;
+  Uint64 now = 0;
+  float accumulator = 0.0f;
+  float alpha = 0.0f;
   UI::InputContext inputCtx;
   bool running = true;
+
   while (running) {
     SDL_PROFILE_FRAME();
 #ifndef NDEBUG
     fpsCounter->update();
 #endif
-    uint64_t now = SDL_GetTicks();
-    float deltaTime =
-        SDL_min((now - lastTick) / 1000.0f, 0.05f); // capped at 50ms
+    now = SDL_GetTicks();
+    float deltaTime = SDL_clamp((now - lastTick) / 1000.0f, 0.0f,
+                                0.05f); // capped from 0ms to 50ms
     lastTick = now;
 
     // Clear previous frame input
@@ -180,6 +188,25 @@ int main(void) {
       Scene::Manager::update(deltaTime, inputCtx);
     }
 
+    // Fixed Update Scene
+    {
+      SDL_PROFILE_ZONE("Scene Fixed Update");
+      accumulator += deltaTime;
+      steps = 0;
+      while (accumulator >= FIXED_DELTA_TIME && steps < MAX_STEPS_PER_FRAME) {
+        Scene::Manager::fixedUpdate(FIXED_DELTA_TIME);
+        accumulator -= FIXED_DELTA_TIME;
+        steps++;
+      }
+      // NOTE: anti-spiral fallback:
+      if (steps == MAX_STEPS_PER_FRAME) {
+        accumulator = 0.0f;
+      }
+
+      // NOTE: alpha for render interpolation + clamp to prevent drift
+      alpha = SDL_clamp(accumulator / FIXED_DELTA_TIME, 0.0f, 1.0f);
+    }
+
     // Render frame
     {
       SDL_PROFILE_ZONE("Render");
@@ -187,7 +214,7 @@ int main(void) {
       SDL_RenderClear(renderer);
 
       // Draw Scene
-      Scene::Manager::draw(renderer);
+      Scene::Manager::draw(renderer, alpha);
 #ifndef NDEBUG
       fpsCounter->draw(renderer);
 #endif
