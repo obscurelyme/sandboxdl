@@ -8,6 +8,7 @@ std::unordered_map<Uint32, SceneId> Manager::transitions{};
 IScene *Manager::currentScene = nullptr;
 SceneId Manager::currentSceneId = SceneId::None;
 std::optional<SceneId> Manager::pendingScene{};
+bool Manager::paused = false;
 
 void IScene::fixedUpdate(float) {
   // no-op
@@ -67,6 +68,14 @@ void Manager::handleEvent(const SDL_Event &event) {
     return;
   }
 
+  if (event.type == Events::USER_PAUSE) {
+    paused = true;
+  }
+
+  if (event.type == Events::USER_UNPAUSE) {
+    paused = false;
+  }
+
   auto iterator = transitions.find(event.type);
   if (iterator != transitions.end()) {
     pendingScene = iterator->second;
@@ -91,7 +100,11 @@ void Manager::fixedUpdate(float deltaTime) {
 
 void Manager::draw(SDL_Renderer *renderer, float alpha) {
   SDL_PROFILE_ZONE("Scene::Manager::draw");
-  currentScene->draw(renderer, alpha);
+  if (paused) {
+    currentScene->draw(renderer, 1.0f);
+  } else {
+    currentScene->draw(renderer, alpha);
+  }
 }
 
 void Manager::transitionTo(SceneId sceneId) {

@@ -38,5 +38,6 @@ private:
   static IScene *currentScene;
   static SceneId currentSceneId;
   static std::optional<SceneId> pendingScene;
+  static bool paused;
 };
 }; // namespace Scene

@@ -188,7 +188,7 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
     // NOTE: left bumper move
     circle.applyImpulse(Math::Vec2{
         .x = -1,
-        .y = -15,
+        .y = -2,
     });
   }
 
@@ -196,7 +196,7 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
     // NOTE: right bumper move
     circle.applyImpulse(Math::Vec2{
         .x = 1,
-        .y = -15,
+        .y = -2,
     });
   }
 
@@ -224,21 +224,23 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
 
 void GameScene::fixedUpdate(float deltaTime) {
   if (!paused) {
+    circle.capturePreviousState();
     Physics::World::Simulate(deltaTime);
+    circle.captureCurrentState();
     ballPosition = circle.getPosition();
     SDL_LogInfo(0, "[GameScene::fixedUpdate] Position (%.2f, %.2f)",
                 ballPosition.x, ballPosition.y);
   }
 }
 
-void GameScene::draw(SDL_Renderer *renderer, float _alpha) {
+void GameScene::draw(SDL_Renderer *renderer, float alpha) {
   SDL_PROFILE_ZONE("Game::GameScene::draw");
   background.draw(renderer);
   uiLayer.draw(renderer);
   lives.draw(renderer);
   ball.draw(renderer);
   bumper.draw(renderer);
-  circle.debugDraw(renderer);
+  circle.debugDraw(renderer, alpha);
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
   SDL_RenderRect(renderer, &leftRenderRect);
   SDL_RenderRect(renderer, &rightRenderRect);

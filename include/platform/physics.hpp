@@ -101,6 +101,27 @@ public:
 
 private:
   static b2WorldId id;
+  // static std::array<>
+};
+
+class Collider {
+public:
+  void capturePreviousState() {
+    previousPosition = currentPosition;
+    previousRotation = currentRotation;
+  }
+
+  void captureCurrentState() {
+    currentPosition = b2Body_GetPosition(id);
+    currentRotation = b2Body_GetRotation(id);
+  }
+
+private:
+  b2BodyId id = b2_nullBodyId;
+  b2Vec2 previousPosition = b2Vec2_zero;
+  b2Vec2 currentPosition = b2Vec2_zero;
+  b2Rot previousRotation = b2Rot_identity;
+  b2Rot currentRotation = b2Rot_identity;
 };
 
 class BoxCollider {
@@ -148,11 +169,9 @@ public:
   };
 
   Math::Vec2 getPosition() {
-    auto pos = b2Body_GetPosition(id);
-
     return Math::Vec2{
-        .x = pos.x,
-        .y = pos.y,
+        .x = currentPos.x,
+        .y = currentPos.y,
     };
   }
 
@@ -160,14 +179,29 @@ public:
     b2Body_SetTransform(id, toB2Vec2(pos), deg2rot(0));
   }
 
-  void debugDraw(SDL_Renderer *renderer) {
-    drawCircle(renderer, b2Body_GetPosition(id), circle.radius, debugDrawColor);
+  void debugDraw(SDL_Renderer *renderer, float alpha) {
+    b2Vec2 p = b2Lerp(previousPos, currentPos, alpha);
+    drawCircle(renderer, p, circle.radius, debugDrawColor);
+  }
+
+  void capturePreviousState() {
+    previousPos = currentPos;
+    previousRot = currentRot;
+  }
+
+  void captureCurrentState() {
+    currentPos = b2Body_GetPosition(id);
+    currentRot = b2Body_GetRotation(id);
   }
 
 private:
   void release();
   void createCollider();
 
+  b2Vec2 previousPos;
+  b2Vec2 currentPos;
+  b2Rot previousRot;
+  b2Rot currentRot;
   CircleColliderProps props{};
   b2BodyId id = b2_nullBodyId;
   b2Circle circle{};

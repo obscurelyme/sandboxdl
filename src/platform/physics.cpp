@@ -13,7 +13,9 @@ void World::Create() {
 }
 
 void World::Simulate(float fixedDeltaTime) {
+  // TODO: all physics objects, capture their previous state
   b2World_Step(id, fixedDeltaTime, SUB_STEP_COUNT);
+  // TODO: all physics objects, capture their current state
 }
 
 b2WorldId World::Id() { return id; }
