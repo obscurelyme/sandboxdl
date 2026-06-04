@@ -5,6 +5,7 @@
 #include "game/bumper.hpp"
 #include "game/player-lives.hpp"
 #include "platform/audio.hpp"
+#include "platform/physics.hpp"
 #include "platform/scene.hpp"
 #include <memory>
 
@@ -47,5 +48,6 @@ private:
   UI::Layer pausedLayer;
   UI::Layer gameOverLayer;
   PlayerLives lives;
+  Physics::CircleCollider circle;
 };
 } // namespace Game

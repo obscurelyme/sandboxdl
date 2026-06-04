@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform/math.hpp"
 #include <SDL3/SDL_render.h>
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
@@ -57,6 +58,37 @@ inline void drawCircle(SDL_Renderer *renderer, b2Vec2 center, float radius,
   }
 }
 
+enum class BodyType {
+  Static,
+  Dynamic,
+  Kinematic,
+};
+
+inline b2BodyType toB2BodyType(BodyType type) {
+  switch (type) {
+  case BodyType::Dynamic:
+    return b2_dynamicBody;
+  case BodyType::Static:
+    return b2_staticBody;
+  case BodyType::Kinematic:
+    return b2_kinematicBody;
+  }
+}
+
+inline b2Vec2 toB2Vec2(Math::Vec2 vec2) {
+  return b2Vec2{
+      .x = vec2.x,
+      .y = vec2.y,
+  };
+}
+
+inline b2Vec2 toB2Vec2(SDL_FPoint vec2) {
+  return b2Vec2{
+      .x = vec2.x,
+      .y = vec2.y,
+  };
+}
+
 class World {
 public:
   static void Create();
@@ -83,10 +115,67 @@ private:
   b2BodyId id;
 };
 
+struct CircleColliderProps {
+  SDL_FPoint position;
+  BodyType type;
+  SDL_FPoint center;
+  bool isBullet;
+  float density;
+  float radius;
+  float bounce;
+  float friction;
+  float rollResistance;
+};
+
 class CircleCollider {
 public:
   CircleCollider() = default;
+  explicit CircleCollider(const CircleColliderProps &props);
+  CircleCollider(const CircleCollider &) = delete;
+  CircleCollider &operator=(const CircleCollider &) = delete;
+  CircleCollider(CircleCollider &&other) noexcept;
+  CircleCollider &operator=(CircleCollider &&other) noexcept;
+  ~CircleCollider();
 
-  // TODO: make the circle collider
+  void applyForce(Math::Vec2 force) {
+    b2Body_ApplyForceToCenter(id, toB2Vec2(force), true);
+  }
+
+  void applyTorque(float torque) { b2Body_ApplyTorque(id, torque, true); }
+
+  void applyImpulse(Math::Vec2 impulse) {
+    b2Body_ApplyLinearImpulseToCenter(id, toB2Vec2(impulse), true);
+  };
+
+  Math::Vec2 getPosition() {
+    auto pos = b2Body_GetPosition(id);
+
+    return Math::Vec2{
+        .x = pos.x,
+        .y = pos.y,
+    };
+  }
+
+  void setTransform(Math::Vec2 pos) {
+    b2Body_SetTransform(id, toB2Vec2(pos), deg2rot(0));
+  }
+
+  void debugDraw(SDL_Renderer *renderer) {
+    drawCircle(renderer, b2Body_GetPosition(id), circle.radius, debugDrawColor);
+  }
+
+private:
+  void release();
+  void createCollider();
+
+  CircleColliderProps props{};
+  b2BodyId id = b2_nullBodyId;
+  b2Circle circle{};
+  SDL_Color debugDrawColor{
+      .r = 0,
+      .g = 255,
+      .b = 255,
+      .a = 255,
+  };
 };
 } // namespace Physics

@@ -11,15 +11,13 @@ b2BodyId groundId;
 b2BodyId topId;
 b2BodyId leftId;
 b2BodyId rightId;
-b2BodyId bodyId;
 constexpr float TEST_BOX_HALF_WIDTH = 0.15f;
 constexpr float TEST_BOX_HALF_HEIGHT = 0.15f;
 const float FULL_WIDTH_UNITS = Physics::toUnits(800);
 const float FULL_HEIGHT_UNITS = Physics::toUnits(450);
 const float HALF_WIDTH_UNITS = Physics::toUnits(800) * 0.5f;
 const float HALF_HEIGHT_UNITS = Physics::toUnits(450) * 0.5f;
-b2Vec2 ballPosition;
-b2Circle circle;
+Math::Vec2 ballPosition;
 SDL_FRect leftRenderRect{};
 SDL_FRect rightRenderRect{};
 
@@ -109,20 +107,26 @@ void GameScene::onEnter() {
                                           HALF_HEIGHT_UNITS);
 
   // Ball
-  b2BodyDef bodyDef = b2DefaultBodyDef();
-  bodyDef.type = b2_dynamicBody;
-  bodyDef.position = b2Vec2{.x = 4.0f, .y = 2.0f};
-  bodyDef.isBullet = true;
-  bodyId = b2CreateBody(worldId, &bodyDef);
-
-  circle.center = b2Vec2{.x = 0, .y = 0};
-  circle.radius = Physics::toUnits(4);
-  b2ShapeDef shapeDef = b2DefaultShapeDef();
-  shapeDef.density = 1.0f;
-  shapeDef.material.friction = 0.3f;
-  shapeDef.material.restitution = 0.2f;
-  shapeDef.material.rollingResistance = 0;
-  b2CreateCircleShape(bodyId, &shapeDef, &circle);
+  Physics::CircleColliderProps circleProps{
+      .position =
+          SDL_FPoint{
+              .x = 275,
+              .y = 200,
+          },
+      .type = Physics::BodyType::Dynamic,
+      .center =
+          SDL_FPoint{
+              .x = 0,
+              .y = 0,
+          },
+      .isBullet = true,
+      .density = 1.0,
+      .radius = 4,
+      .bounce = 0.5f,
+      .friction = 0.3,
+      .rollResistance = 0,
+  };
+  circle = Physics::CircleCollider{circleProps};
 }
 
 void GameScene::onExit() {
@@ -182,22 +186,25 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
 
   if (Input::Manager::Mouse().isLeftButtonPressed()) {
     // NOTE: left bumper move
-    b2Body_ApplyForceToCenter(bodyId, b2Vec2{.x = -1, .y = -15}, true);
+    circle.applyImpulse(Math::Vec2{
+        .x = -1,
+        .y = -15,
+    });
   }
 
   if (Input::Manager::Mouse().isRightButtonPressed()) {
     // NOTE: right bumper move
-    b2Body_ApplyForceToCenter(bodyId, b2Vec2{.x = 1, .y = -15}, true);
+    circle.applyImpulse(Math::Vec2{
+        .x = 1,
+        .y = -15,
+    });
   }
 
   if (Input::Manager::Keyboard().wasPressed(SDL_SCANCODE_Q)) {
-    b2Body_SetTransform(bodyId,
-                        b2Vec2{
-                            .x = Physics::toUnits(800 * .5),
-                            .y = Physics::toUnits(450 * .5),
-                        },
-                        Physics::deg2rot(0));
-    b2Body_SetAwake(bodyId, true);
+    circle.setTransform(Math::Vec2{
+        .x = 275,
+        .y = 200,
+    });
   }
 
   if (!paused && !gameOver) {
@@ -218,7 +225,7 @@ void GameScene::update(float deltaTime, const UI::InputContext &ctx) {
 void GameScene::fixedUpdate(float deltaTime) {
   if (!paused) {
     Physics::World::Simulate(deltaTime);
-    ballPosition = b2Body_GetPosition(bodyId);
+    ballPosition = circle.getPosition();
     SDL_LogInfo(0, "[GameScene::fixedUpdate] Position (%.2f, %.2f)",
                 ballPosition.x, ballPosition.y);
   }
@@ -231,9 +238,8 @@ void GameScene::draw(SDL_Renderer *renderer, float _alpha) {
   lives.draw(renderer);
   ball.draw(renderer);
   bumper.draw(renderer);
+  circle.debugDraw(renderer);
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-  Physics::drawCircle(renderer, ballPosition, circle.radius,
-                      SDL_Color{.r = 255, .g = 255, .b = 255, .a = 255});
   SDL_RenderRect(renderer, &leftRenderRect);
   SDL_RenderRect(renderer, &rightRenderRect);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
