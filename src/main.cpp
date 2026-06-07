@@ -6,6 +6,7 @@
 #include "platform/events.hpp"
 #include "platform/input.hpp"
 #include "platform/physics.hpp"
+#include "platform/physics/parser.hpp"
 #include "platform/profiler.hpp"
 #include "platform/scene.hpp"
 #include "platform/spritesheet.hpp"
@@ -72,8 +73,8 @@ int main(void) {
   int windowFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN;
 #endif
 
-  success = SDL_CreateWindowAndRenderer("Breakout", 1920, 1080, windowFlags,
-                                        &window, &renderer);
+  success = SDL_CreateWindowAndRenderer("Pinball Space Wars", 1920, 1080,
+                                        windowFlags, &window, &renderer);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
     return 1;
@@ -91,6 +92,8 @@ int main(void) {
                                   SDL_GPU_PRESENTMODE_IMMEDIATE);
   }
   /* #endregion */
+  Physics::World::SetDebugRenderer(renderer);
+
   UI::FontManager::SetRenderer(renderer);
   UI::FontManager::LoadFont("Tiny5");
   Sprites::Manager::SetRenderer(renderer);
@@ -127,6 +130,8 @@ int main(void) {
 #ifndef NDEBUG
   auto fpsCounter = std::make_unique<DebugGui::FPS>();
 #endif
+
+  // Physics::XmlColliderParser parser{"slingshot"};
 
   const Uint64 MAX_STEPS_PER_FRAME = 5;
   const float FIXED_DELTA_TIME = Physics::World::FIXED_TIME_STEP;

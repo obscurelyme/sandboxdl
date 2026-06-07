@@ -16,7 +16,7 @@ if(WIN32)
   endif()
 endif()
 
-project(breakout VERSION 0.1.0 LANGUAGES CXX)
+project(pinball VERSION 0.1.0 LANGUAGES CXX)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   include(FetchContent)
@@ -45,7 +45,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 
-add_executable(breakout 
+add_executable(pinball 
   src/main.cpp
   src/logging/handler.cpp
   src/platform/spritesheet.cpp
@@ -64,6 +64,7 @@ add_executable(breakout
   src/game/background.cpp
   src/game/player-lives.cpp
   src/platform/physics.cpp
+  src/platform/physics/parser.cpp
 )
 
 if(WIN32)
@@ -73,16 +74,16 @@ if(WIN32)
     file(TO_CMAKE_PATH "${APP_ICON_PATH_ABS}" APP_ICON_PATH_CMAKE)
     set(WINDOWS_APP_ICON_RC "${CMAKE_BINARY_DIR}/windows-app-icon.rc")
     file(WRITE "${WINDOWS_APP_ICON_RC}" "IDI_APP_ICON ICON \"${APP_ICON_PATH_CMAKE}\"\n")
-    target_sources(breakout PRIVATE "${WINDOWS_APP_ICON_RC}")
+    target_sources(pinball PRIVATE "${WINDOWS_APP_ICON_RC}")
   else()
     message(STATUS "Windows app icon not found at '${APP_ICON_PATH_ABS}'. Set APP_ICON_PATH to a valid .ico file to embed an executable icon.")
   endif()
 endif()
 
-target_include_directories(breakout PRIVATE include)
+target_include_directories(pinball PRIVATE include)
 
 target_link_libraries(
-  breakout 
+  pinball 
   PRIVATE 
   tinyxml2::tinyxml2 
   fmt::fmt 
@@ -91,34 +92,34 @@ target_link_libraries(
   box2d::box2d
 )
 
-if (BREAKOUT_ENABLE_PROFILING)
-  message("-- BREAKOUT_ENABLE_PROFILING: ON")
-  target_compile_definitions(breakout PRIVATE -DBREAKOUT_ENABLE_PROFILING)
+if (PINBALL_ENABLE_PROFILING)
+  message("-- PINBALL_ENABLE_PROFILING: ON")
+  target_compile_definitions(pinball PRIVATE -DPINBALL_ENABLE_PROFILING)
 else()
-  message("-- BREAKOUT_ENABLE_PROFILING: OFF")
+  message("-- PINBALL_ENABLE_PROFILING: OFF")
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(
-    breakout
+    pinball
     PRIVATE
     TracyClient
   )
 endif()
 
 if(WIN32)
-  set_target_properties(breakout PROPERTIES
+  set_target_properties(pinball PROPERTIES
     WIN32_EXECUTABLE $<$<CONFIG:Release>:TRUE>
   )
 
   # Keep a windowed Release build (no console) while still using int main(...).
-  target_link_options(breakout PRIVATE
+  target_link_options(pinball PRIVATE
     $<$<CONFIG:Release>:/ENTRY:mainCRTStartup>
   )
 endif()
 
 # Install the runtime executable and the full assets directory.
-install(TARGETS breakout
+install(TARGETS pinball
   RUNTIME DESTINATION .
 )
 

@@ -4,6 +4,9 @@
 #include <SDL3/SDL_render.h>
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace Physics {
 constexpr float PIXELS_PER_UNIT = 50.0f;
@@ -33,6 +36,11 @@ inline SDL_FRect toRenderRect(const b2Vec2 &center, float halfWidth,
       .h = height,
   };
 }
+
+struct PhysicsContext {
+  SDL_Renderer *renderer;
+  float alpha;
+};
 
 inline void drawCircle(SDL_Renderer *renderer, b2Vec2 center, float radius,
                        SDL_Color color, int segments = 32) {
@@ -84,28 +92,23 @@ inline b2Vec2 toB2Vec2(Math::Vec2 vec2) {
 
 inline b2Vec2 toB2Vec2(SDL_FPoint vec2) {
   return b2Vec2{
-      .x = vec2.x,
-      .y = vec2.y,
+      .x = toUnits(vec2.x),
+      .y = toUnits(vec2.y),
   };
 }
 
-class World {
-public:
-  static void Create();
-  static void Simulate(float fixedDeltaTime);
-  static void Destroy();
-  static b2WorldId Id();
-
-  static constexpr float FIXED_TIME_STEP{1.0f / 60.f};
-  static constexpr int SUB_STEP_COUNT{4};
-
-private:
-  static b2WorldId id;
-  // static std::array<>
-};
+inline SDL_FPoint toPoint(b2Vec2 vec2) {
+  return SDL_FPoint{
+      .x = toPixels(vec2.x),
+      .y = toPixels(vec2.y),
+  };
+}
 
 class Collider {
 public:
+  Collider() = default;
+  virtual ~Collider() = default;
+
   void capturePreviousState() {
     previousPosition = currentPosition;
     previousRotation = currentRotation;
@@ -116,7 +119,9 @@ public:
     currentRotation = b2Body_GetRotation(id);
   }
 
-private:
+protected:
+  virtual void release() = 0;
+
   b2BodyId id = b2_nullBodyId;
   b2Vec2 previousPosition = b2Vec2_zero;
   b2Vec2 currentPosition = b2Vec2_zero;
@@ -124,16 +129,58 @@ private:
   b2Rot currentRotation = b2Rot_identity;
 };
 
-class BoxCollider {
+class World {
+public:
+  static void Create();
+  static void Simulate(float fixedDeltaTime);
+  static void Destroy();
+  static void SetDebugRenderer(SDL_Renderer *renderer);
+  /**
+   * Draws all physics objects in the world, this function is a no-op in
+   * release builds.
+   */
+  static void DebugDraw(float alpha);
+  static b2WorldId Id();
+  static void AddCollider(std::shared_ptr<Collider> collider);
+  static void RemoveCollider(std::shared_ptr<Collider> collider);
+
+  static constexpr float FIXED_TIME_STEP{1.0f / 60.f};
+  static constexpr int SUB_STEP_COUNT{4};
+
+private:
+  static b2WorldId id;
+  static b2DebugDraw debugDraw;
+  static std::vector<std::weak_ptr<Collider>> colliders;
+};
+
+class BoxCollider : public Collider {
 public:
   explicit BoxCollider(const SDL_FRect &dimensions);
+
+protected:
+  void release() override {}
 
   b2BodyId getId() const;
   SDL_FPoint getPosition() const;
   SDL_FPoint getRotation() const;
+};
+
+struct ChainColliderProps {
+  std::vector<SDL_FPoint> points;
+};
+
+class ChainCollider : public Collider {
+public:
+  explicit ChainCollider(const std::vector<SDL_FPoint> &points);
+  ~ChainCollider();
+  void debugDraw(SDL_Renderer *renderer) const;
+
+protected:
+  void release() override;
 
 private:
-  b2BodyId id;
+  std::vector<b2Vec2> _points;
+  std::vector<SDL_FPoint> _authorPoints;
 };
 
 struct CircleColliderProps {
@@ -146,9 +193,10 @@ struct CircleColliderProps {
   float bounce;
   float friction;
   float rollResistance;
+  std::string name;
 };
 
-class CircleCollider {
+class CircleCollider : public Collider {
 public:
   CircleCollider() = default;
   explicit CircleCollider(const CircleColliderProps &props);
@@ -170,8 +218,8 @@ public:
 
   Math::Vec2 getPosition() {
     return Math::Vec2{
-        .x = currentPos.x,
-        .y = currentPos.y,
+        .x = currentPosition.x,
+        .y = currentPosition.y,
     };
   }
 
@@ -180,30 +228,15 @@ public:
   }
 
   void debugDraw(SDL_Renderer *renderer, float alpha) {
-    b2Vec2 p = b2Lerp(previousPos, currentPos, alpha);
+    b2Vec2 p = b2Lerp(previousPosition, currentPosition, alpha);
     drawCircle(renderer, p, circle.radius, debugDrawColor);
   }
 
-  void capturePreviousState() {
-    previousPos = currentPos;
-    previousRot = currentRot;
-  }
-
-  void captureCurrentState() {
-    currentPos = b2Body_GetPosition(id);
-    currentRot = b2Body_GetRotation(id);
-  }
-
 private:
-  void release();
+  void release() override;
   void createCollider();
 
-  b2Vec2 previousPos;
-  b2Vec2 currentPos;
-  b2Rot previousRot;
-  b2Rot currentRot;
   CircleColliderProps props{};
-  b2BodyId id = b2_nullBodyId;
   b2Circle circle{};
   SDL_Color debugDrawColor{
       .r = 0,

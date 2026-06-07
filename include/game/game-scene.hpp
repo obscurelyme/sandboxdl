@@ -48,6 +48,7 @@ private:
   UI::Layer pausedLayer;
   UI::Layer gameOverLayer;
   PlayerLives lives;
-  Physics::CircleCollider circle;
+  std::shared_ptr<Physics::CircleCollider> circle{nullptr};
+  std::shared_ptr<Physics::ChainCollider> ramp{nullptr};
 };
 } // namespace Game
