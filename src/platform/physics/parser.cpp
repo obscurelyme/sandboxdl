@@ -55,7 +55,7 @@ std::string XmlColliderParser::loadFullFilePath(const std::string &fileName) {
   SDL_PROFILE_ZONE("XmlColliderParser::Constructor::loadFullFilePath");
   auto filePathWithExt = fileName + ".xml";
   auto assetPath = std::filesystem::path(SDL_GetBasePath()) / "assets" /
-                   "colliders" / filePathWithExt;
+                   "collider" / filePathWithExt;
 
   return assetPath.string();
 }
@@ -84,7 +84,8 @@ void XmlColliderParser::loadDocument(const std::string &filePath) {
         meta.anchor = loadAnchor(child->GetText());
       }
 
-      if (std::string(child->Name()) == "fixtures") {
+      if (std::string(child->Name()) == "fixtures" &&
+          child->FirstChildElement()) {
         loadFixtures(meta, child->FirstChildElement());
       }
 
@@ -110,6 +111,8 @@ b2Vec2 XmlColliderParser::loadAnchor(const std::string &anchorStr) {
 void XmlColliderParser::loadFixtures(ColliderMeta &meta,
                                      tinyxml2::XMLElement *el) {
   SDL_PROFILE_ZONE("XmlColliderParser::Constructor::loadFixtures");
+  el = el->FirstChildElement();
+
   do {
     if (std::string(el->Name()) == "density") {
       meta.density = el->FloatText();

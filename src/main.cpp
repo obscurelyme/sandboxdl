@@ -131,7 +131,7 @@ int main(void) {
   auto fpsCounter = std::make_unique<DebugGui::FPS>();
 #endif
 
-  // Physics::XmlColliderParser parser{"slingshot"};
+  Physics::XmlColliderParser parser{"slingshot"};
 
   const Uint64 MAX_STEPS_PER_FRAME = 5;
   const float FIXED_DELTA_TIME = Physics::World::FIXED_TIME_STEP;
