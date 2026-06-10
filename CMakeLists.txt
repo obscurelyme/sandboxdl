@@ -44,6 +44,7 @@ find_package(tinyxml2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 add_executable(pinball 
   src/main.cpp
@@ -65,6 +66,8 @@ add_executable(pinball
   src/game/player-lives.cpp
   src/platform/physics.cpp
   src/platform/physics/parser.cpp
+  src/platform/editor/backbuffer.cpp
+  src/platform/editor/core.cpp
 )
 
 if(WIN32)
@@ -104,6 +107,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     pinball
     PRIVATE
     TracyClient
+    imgui::imgui
   )
 endif()
 

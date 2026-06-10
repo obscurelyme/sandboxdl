@@ -15,6 +15,11 @@ const inline Uint32 USER_UNPAUSE{SDL_RegisterEvents(1)};
 const inline Uint32 USER_SHOW_CREDITS{SDL_RegisterEvents(1)};
 const inline Uint32 USER_HIDE_CREDITS{SDL_RegisterEvents(1)};
 const inline Uint32 USER_PLAYER_LOST_LIFE{SDL_RegisterEvents(1)};
+const inline Uint32 USER_EVENT_COUNT{SDL_RegisterEvents(1)};
+
+inline bool IsUserEvent(Uint32 eventType) {
+  return eventType >= USER_PLAY_GAME || eventType < USER_EVENT_COUNT;
+}
 
 inline void Emit(Uint32 event, void *data1, void *data2) {
   SDL_UserEvent userEvent{

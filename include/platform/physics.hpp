@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/math.hpp"
+#include "platform/physics/meta.hpp"
 #include <SDL3/SDL_render.h>
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
@@ -119,6 +120,17 @@ public:
     currentRotation = b2Body_GetRotation(id);
   }
 
+  void setGravityScale(float scale) { b2Body_SetGravityScale(id, scale); }
+
+  void setRotation(float rotation) {
+    b2Body_SetTransform(id, currentPosition, deg2rot(rotation));
+  }
+
+  b2Vec2 previousPos() const { return previousPosition; }
+  b2Rot previousRot() const { return previousRotation; }
+  b2Vec2 currentPos() const { return currentPosition; }
+  b2Rot currentRot() const { return currentRotation; }
+
 protected:
   virtual void release() = 0;
 
@@ -151,6 +163,22 @@ private:
   static b2WorldId id;
   static b2DebugDraw debugDraw;
   static std::vector<std::weak_ptr<Collider>> colliders;
+};
+
+class PolygonCollider : public Collider {
+public:
+  PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos);
+  PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos, BodyType type);
+  PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos, BodyType type,
+                  float scale);
+  PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos, BodyType type,
+                  float scale, bool invertY, bool invertX);
+  ~PolygonCollider();
+
+protected:
+  void createPolygon(const ColliderMeta &meta, SDL_FPoint pos, b2BodyType type,
+                     float scale, bool invertX, bool invertY);
+  void release() override;
 };
 
 class BoxCollider : public Collider {

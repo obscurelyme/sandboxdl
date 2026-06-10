@@ -2,10 +2,10 @@
 #include "platform/events.hpp"
 #include "platform/input.hpp"
 #include "platform/physics.hpp"
+#include "platform/physics/parser.hpp"
 #include "platform/profiler.hpp"
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
-#include <cmath>
 
 namespace Game {
 b2BodyId groundId;
@@ -16,79 +16,6 @@ const float FULL_WIDTH_UNITS = Physics::toUnits(800);
 const float FULL_HEIGHT_UNITS = Physics::toUnits(450);
 const float HALF_WIDTH_UNITS = Physics::toUnits(800) * 0.5f;
 const float HALF_HEIGHT_UNITS = Physics::toUnits(450) * 0.5f;
-
-std::vector<SDL_FPoint> makeArcPoints(const SDL_FPoint &center,
-                                      float startAngleRadians,
-                                      float sweepAngleRadians,
-                                      float arcLengthPixels, int pointCount) {
-  std::vector<SDL_FPoint> points;
-  if (pointCount < 2) {
-    return points;
-  }
-
-  const float absSweep = std::fabs(sweepAngleRadians);
-  if (absSweep <= 0.0001f || arcLengthPixels <= 0.0f) {
-    return points;
-  }
-
-  const float radius = arcLengthPixels / absSweep;
-  points.reserve(static_cast<size_t>(pointCount));
-
-  for (int i = 0; i < pointCount; i++) {
-    const float t = static_cast<float>(i) / static_cast<float>(pointCount - 1);
-    const float theta = startAngleRadians + (sweepAngleRadians * t);
-    points.push_back(SDL_FPoint{
-        .x = center.x + radius * std::cos(theta),
-        .y = center.y + radius * std::sin(theta),
-    });
-  }
-
-  return points;
-}
-
-std::vector<SDL_FPoint> makeArcPointsFromStartAndTangent(
-    const SDL_FPoint &startPoint, float startTangentAngleRadians,
-    float sweepAngleRadians, float arcLengthPixels, int pointCount) {
-  std::vector<SDL_FPoint> points;
-  if (pointCount < 2) {
-    return points;
-  }
-
-  const float absSweep = std::fabs(sweepAngleRadians);
-  if (absSweep <= 0.0001f || arcLengthPixels <= 0.0f) {
-    return points;
-  }
-
-  const float radius = arcLengthPixels / absSweep;
-  const float turnSign = sweepAngleRadians >= 0.0f ? 1.0f : -1.0f;
-
-  const float tangentX = std::cos(startTangentAngleRadians);
-  const float tangentY = std::sin(startTangentAngleRadians);
-
-  // Rotate tangent by +90 deg for a left normal; use turnSign to select side.
-  const float normalX = -tangentY * turnSign;
-  const float normalY = tangentX * turnSign;
-
-  const SDL_FPoint center{
-      .x = startPoint.x + normalX * radius,
-      .y = startPoint.y + normalY * radius,
-  };
-
-  const float startRadialAngle =
-      std::atan2(startPoint.y - center.y, startPoint.x - center.x);
-
-  points.reserve(static_cast<size_t>(pointCount));
-  for (int i = 0; i < pointCount; i++) {
-    const float t = static_cast<float>(i) / static_cast<float>(pointCount - 1);
-    const float theta = startRadialAngle + (sweepAngleRadians * t);
-    points.push_back(SDL_FPoint{
-        .x = center.x + radius * std::cos(theta),
-        .y = center.y + radius * std::sin(theta),
-    });
-  }
-
-  return points;
-}
 
 void GameScene::_onEnter() {
   // SDL_HideCursor();
@@ -123,6 +50,94 @@ void GameScene::_onEnter() {
       .y = 300,
   };
   ball = Ball{sheet->getSprite("gold-ball"), initBallPosition};
+}
+
+void GameScene::_createPhysicsEntities() {
+  // Ball
+  Physics::CircleColliderProps circleProps{
+      .position =
+          SDL_FPoint{
+              .x = 275,
+              .y = 200,
+          },
+      .type = Physics::BodyType::Dynamic,
+      .center =
+          SDL_FPoint{
+              .x = 0,
+              .y = 0,
+          },
+      .isBullet = true,
+      .density = 1.0,
+      .radius = 4,
+      .bounce = 0.25f,
+      .friction = 0.3,
+      .rollResistance = 0.05,
+      .name = "Pinball",
+  };
+  circle = std::make_shared<Physics::CircleCollider>(circleProps);
+
+  Physics::World::AddCollider(circle);
+
+  Physics::XmlColliderParser parser{"slingshot"};
+  leftSlingshot = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(0),
+      SDL_FPoint{
+          175,
+          300,
+      },
+      Physics::BodyType::Static, 0.2);
+  rightSlingshot = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(0),
+      SDL_FPoint{
+          325,
+          300,
+      },
+      Physics::BodyType::Static, 0.2, false, true);
+  Physics::World::AddCollider(leftSlingshot);
+  Physics::World::AddCollider(rightSlingshot);
+
+  leftFlipper = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(1),
+      SDL_FPoint{
+          175,
+          350,
+      },
+      Physics::BodyType::Dynamic, 0.2, false, true);
+  rightFlipper = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(1),
+      SDL_FPoint{
+          325,
+          350,
+      },
+      Physics::BodyType::Dynamic, 0.2);
+  Physics::World::AddCollider(leftFlipper);
+  Physics::World::AddCollider(rightFlipper);
+  leftFlipper->setGravityScale(0);
+  rightFlipper->setGravityScale(0);
+
+  leftWall = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(3),
+      SDL_FPoint{
+
+      },
+      Physics::BodyType::Static, 0.2);
+  leftWall = std::make_shared<Physics::PolygonCollider>(
+      parser.colliderMetas.at(3),
+      SDL_FPoint{
+
+      },
+      Physics::BodyType::Static, 0.2);
+  Physics::World::AddCollider(leftWall);
+  Physics::World::AddCollider(rightWall);
+}
+
+void GameScene::_resetPhysicsEntities() {
+  circle.reset();
+  ramp.reset();
+  leftSlingshot.reset();
+  rightSlingshot.reset();
+  leftFlipper.reset();
+  rightFlipper.reset();
 }
 
 void GameScene::onEnter() {
@@ -180,43 +195,7 @@ void GameScene::onEnter() {
   b2Polygon rightBox = b2MakeBox(0.2f, HALF_HEIGHT_UNITS);
   b2CreatePolygonShape(rightId, &rightShapeDef, &rightBox);
 
-  // Ball
-  Physics::CircleColliderProps circleProps{
-      .position =
-          SDL_FPoint{
-              .x = 275,
-              .y = 200,
-          },
-      .type = Physics::BodyType::Dynamic,
-      .center =
-          SDL_FPoint{
-              .x = 0,
-              .y = 0,
-          },
-      .isBullet = true,
-      .density = 1.0,
-      .radius = 4,
-      .bounce = 0.25f,
-      .friction = 0.3,
-      .rollResistance = 0.05,
-      .name = "Pinball",
-  };
-  circle = std::make_shared<Physics::CircleCollider>(circleProps);
-
-  const float sweepAngle = -Physics::deg2rads(110.0f);
-  const float arcLength = 130.0f;
-  const SDL_FPoint startPoint{
-      .x = 70.0f,
-      .y = 135.0f,
-  };
-  const float startTangentAngle = Physics::deg2rads(345.0f);
-  std::vector<SDL_FPoint> points = makeArcPointsFromStartAndTangent(
-      startPoint, startTangentAngle, sweepAngle, arcLength, 20);
-
-  ramp = std::make_shared<Physics::ChainCollider>(points);
-
-  Physics::World::AddCollider(circle);
-  Physics::World::AddCollider(ramp);
+  _createPhysicsEntities();
 }
 
 void GameScene::onExit() {
@@ -225,8 +204,7 @@ void GameScene::onExit() {
   uiLayer.clear();
   pausedLayer.clear();
   gameOverLayer.clear();
-  circle.reset();
-  ramp.reset();
+  _resetPhysicsEntities();
   Physics::World::Destroy();
   SDL_ShowCursor();
 }

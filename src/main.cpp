@@ -1,12 +1,13 @@
 #include "game/credits-scene.hpp"
 #include "game/game-scene.hpp"
 #include "game/main-menu-scene.hpp"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_sdlrenderer3.h"
 #include "logging/handler.hpp"
 #include "platform/debug-gui.hpp"
 #include "platform/events.hpp"
 #include "platform/input.hpp"
 #include "platform/physics.hpp"
-#include "platform/physics/parser.hpp"
 #include "platform/profiler.hpp"
 #include "platform/scene.hpp"
 #include "platform/spritesheet.hpp"
@@ -20,9 +21,70 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <imgui.h>
 
-int main(void) {
-  /* #region Init Logic */
+struct AppWindows {
+  SDL_Window *gameWindow;
+  SDL_Renderer *gameRenderer;
+  Uint32 gameWindowId;
+
+  SDL_Window *editorWindow;
+  SDL_Renderer *editorRenderer;
+  Uint32 editorWindowId;
+};
+
+bool InitAppWindows(AppWindows &app) {
+#ifndef NDEBUG
+  int windowFlags = 0;
+#else
+  int windowFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN;
+#endif
+
+  bool success =
+      SDL_CreateWindowAndRenderer("Pinball Space Wars", 1920, 1080, windowFlags,
+                                  &app.gameWindow, &app.gameRenderer);
+  if (!success) {
+    SDL_LogError(0, "%s", SDL_GetError());
+    return false;
+  }
+
+  SDL_SetRenderLogicalPresentation(app.gameRenderer, 800, 450,
+                                   SDL_LOGICAL_PRESENTATION_LETTERBOX);
+  SDL_GPUDevice *gpu = SDL_GetGPURendererDevice(app.gameRenderer);
+  auto gpuDriver = SDL_GetGPUDeviceDriver(gpu);
+  if (!gpuDriver) {
+    SDL_LogError(0, "%s", SDL_GetError());
+  } else {
+    SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
+    SDL_SetGPUSwapchainParameters(gpu, app.gameWindow,
+                                  SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                                  SDL_GPU_PRESENTMODE_IMMEDIATE);
+  }
+
+  app.gameWindowId = SDL_GetWindowID(app.gameWindow);
+
+  success =
+      SDL_CreateWindowAndRenderer("Editor", 1920, 1080, SDL_WINDOW_RESIZABLE,
+                                  &app.editorWindow, &app.editorRenderer);
+  if (!success) {
+    SDL_LogError(0, "%s", SDL_GetError());
+    return false;
+  }
+
+  app.editorWindowId = SDL_GetWindowID(app.editorWindow);
+
+  return true;
+}
+
+void DestroyAppWindows(AppWindows &app) {
+  SDL_DestroyRenderer(app.gameRenderer);
+  SDL_DestroyWindow(app.gameWindow);
+
+  SDL_DestroyRenderer(app.editorRenderer);
+  SDL_DestroyWindow(app.editorWindow);
+}
+
+bool InitHints() {
   SDL_SetLogOutputFunction(Logging::Handler, nullptr);
 
   bool success;
@@ -31,7 +93,7 @@ int main(void) {
   success = SDL_SetHint(SDL_HINT_RENDER_GPU_DEBUG, "1");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
-    return 1;
+    return false;
   }
   SDL_SetLogPriorities(SDL_LOG_PRIORITY_TRACE);
 #else
@@ -40,63 +102,108 @@ int main(void) {
   success = SDL_SetHint(SDL_HINT_RENDER_DRIVER, "gpu");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
-    return 1;
+    return false;
   }
 
+  return true;
+}
+
+bool InitApp() {
   SDL_LogInfo(0, "Starting application");
 
-  success = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD);
+  bool success = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD);
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
-    return 1;
+    return false;
   }
 
   success = SDL_SetAppMetadata("SandboxDL", "0.0.1", "com.obscure.sandboxdl");
   if (!success) {
     SDL_LogError(0, "%s", SDL_GetError());
-    return 1;
+    return false;
   }
 
   success = UI::FontManager::Init();
   if (!success) {
+    return false;
+  }
+
+  return true;
+}
+
+void InitEditor(const AppWindows &app) {
+  float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+  if (main_scale < 1.0f) {
+    main_scale = 1.0f;
+  }
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+  io.FontGlobalScale = main_scale;
+
+  ImGui::StyleColorsDark();
+
+  ImGuiStyle &style = ImGui::GetStyle();
+  style.ScaleAllSizes(main_scale);
+  style.AntiAliasedFill = true;
+  style.AntiAliasedLines = true;
+
+  ImGui_ImplSDL3_InitForSDLRenderer(app.editorWindow, app.editorRenderer);
+  ImGui_ImplSDLRenderer3_Init(app.editorRenderer);
+}
+
+Uint32 GetWindowId(const SDL_Event &e, const AppWindows &app) {
+  switch (e.type) {
+  case SDL_EVENT_WINDOW_FOCUS_LOST:
+  case SDL_EVENT_WINDOW_FOCUS_GAINED:
+  case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+    return e.window.windowID;
+  case SDL_EVENT_KEY_DOWN:
+  case SDL_EVENT_KEY_UP:
+    return e.key.windowID;
+  case SDL_EVENT_MOUSE_MOTION:
+    return e.motion.windowID;
+  case SDL_EVENT_MOUSE_BUTTON_DOWN:
+  case SDL_EVENT_MOUSE_BUTTON_UP:
+    return e.button.windowID;
+  case SDL_EVENT_MOUSE_WHEEL:
+    return e.wheel.windowID;
+  default:
+    return Events::IsUserEvent(e.type) ? app.gameWindowId : 0;
+  }
+}
+
+int main(void) {
+  if (!InitHints()) {
+    SDL_LogError(0, "[App] Unable to set SDL hints. Program will exit.");
     return 1;
   }
-  /* #endregion */
 
-  /* #region Window and Renderer Creation */
-  SDL_Window *window;
-  SDL_Renderer *renderer;
-
-#ifndef NDEBUG
-  int windowFlags = 0;
-#else
-  int windowFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN;
-#endif
-
-  success = SDL_CreateWindowAndRenderer("Pinball Space Wars", 1920, 1080,
-                                        windowFlags, &window, &renderer);
-  if (!success) {
-    SDL_LogError(0, "%s", SDL_GetError());
+  if (!InitApp()) {
+    SDL_LogError(
+        0, "[App] Unable to initialize SDL system[s]. Program will exit.");
     return 1;
   }
 
-  SDL_SetRenderLogicalPresentation(renderer, 800, 450,
-                                   SDL_LOGICAL_PRESENTATION_LETTERBOX);
-  SDL_GPUDevice *gpu = SDL_GetGPURendererDevice(renderer);
-  auto gpuDriver = SDL_GetGPUDeviceDriver(gpu);
-  if (!gpuDriver) {
-    SDL_LogError(0, "%s", SDL_GetError());
-  } else {
-    SDL_LogInfo(0, "Renderer created using driver <%s>", gpuDriver);
-    SDL_SetGPUSwapchainParameters(gpu, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-                                  SDL_GPU_PRESENTMODE_IMMEDIATE);
+  AppWindows app{};
+  if (!InitAppWindows(app)) {
+    SDL_LogError(
+        0, "[App] Unable to create application window[s]. Program will exit.");
+    return 1;
   }
-  /* #endregion */
-  Physics::World::SetDebugRenderer(renderer);
 
-  UI::FontManager::SetRenderer(renderer);
+  InitEditor(app);
+
+  Physics::World::SetDebugRenderer(app.gameRenderer);
+
+  UI::FontManager::SetRenderer(app.gameRenderer);
   UI::FontManager::LoadFont("Tiny5");
-  Sprites::Manager::SetRenderer(renderer);
+  Sprites::Manager::SetRenderer(app.gameRenderer);
   Sprites::Manager::LoadSpriteSheet("breakout-spritesheet");
 
   auto *sheet = Sprites::Manager::GetSpriteSheet("breakout-spritesheet");
@@ -131,8 +238,6 @@ int main(void) {
   auto fpsCounter = std::make_unique<DebugGui::FPS>();
 #endif
 
-  Physics::XmlColliderParser parser{"slingshot"};
-
   const Uint64 MAX_STEPS_PER_FRAME = 5;
   const float FIXED_DELTA_TIME = Physics::World::FIXED_TIME_STEP;
   Uint64 lastTick = SDL_GetTicks();
@@ -142,6 +247,7 @@ int main(void) {
   float alpha = 0.0f;
   UI::InputContext inputCtx;
   bool running = true;
+  bool demo = true;
 
   while (running) {
     SDL_PROFILE_FRAME();
@@ -162,24 +268,43 @@ int main(void) {
     // Poll input
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
-        Input::Manager::Reset();
-      }
+      const bool closeRequested =
+          event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+          (event.window.windowID == app.gameWindowId ||
+           event.window.windowID == app.editorWindowId);
+      const bool quitEvent =
+          event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP;
 
-      if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
-        lastTick = SDL_GetTicks();
-      }
-
-      {
-        SDL_PROFILE_ZONE("Handle Input Event");
-        Input::Manager::HandleInputEvent(renderer, event);
-        inputCtx = UI::SnapshotCtx();
-        Scene::Manager::handleEvent(event);
-      }
-
-      if (event.type == SDL_EVENT_QUIT || event.type == Events::USER_QUIT_APP) {
+      if (closeRequested || quitEvent) {
         running = false;
         break;
+      }
+
+      const Uint32 windowId = GetWindowId(event, app);
+
+      // Editor Events
+      if (windowId == app.editorWindowId) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        // TODO: Editor::HandleEvent(event);
+        continue;
+      }
+
+      // Game Events
+      if (windowId == app.gameWindowId) {
+        if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+          Input::Manager::Reset();
+        }
+
+        if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
+          lastTick = SDL_GetTicks();
+        }
+
+        {
+          SDL_PROFILE_ZONE("Handle Input Event");
+          Input::Manager::HandleInputEvent(app.gameRenderer, event);
+          inputCtx = UI::SnapshotCtx();
+          Scene::Manager::handleEvent(event);
+        }
       }
     }
 
@@ -214,19 +339,43 @@ int main(void) {
 
     // Render frame
     {
-      SDL_PROFILE_ZONE("Render");
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-      SDL_RenderClear(renderer);
+      SDL_PROFILE_ZONE("Game Render");
+      SDL_SetRenderDrawColor(app.gameRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      SDL_RenderClear(app.gameRenderer);
 
       // Draw Scene
-      Scene::Manager::draw(renderer, alpha);
+      Scene::Manager::draw(app.gameRenderer, alpha);
+
 #ifndef NDEBUG
-      fpsCounter->draw(renderer);
+      fpsCounter->draw(app.gameRenderer);
 #endif
 
-      SDL_RenderPresent(renderer);
+      SDL_RenderPresent(app.gameRenderer);
+    }
+
+    // Editor Render
+    {
+      SDL_PROFILE_ZONE("Editor Render");
+      SDL_SetRenderDrawColor(app.editorRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+      SDL_RenderClear(app.editorRenderer);
+
+      ImGui_ImplSDLRenderer3_NewFrame();
+      ImGui_ImplSDL3_NewFrame();
+      ImGui::NewFrame();
+
+      // TODO: Draw Editor Panels...
+      ImGui::ShowDemoWindow(&demo);
+
+      ImGui::Render();
+      ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),
+                                            app.editorRenderer);
+      SDL_RenderPresent(app.editorRenderer);
     }
   }
+
+  ImGui_ImplSDLRenderer3_Shutdown();
+  ImGui_ImplSDL3_Shutdown();
+  ImGui::DestroyContext();
 
   SDL_LogInfo(0, "Closing application");
 #ifndef NDEBUG
@@ -236,6 +385,7 @@ int main(void) {
   Scene::Manager::shutdown();
   Sprites::Manager::Clear();
   UI::FontManager::Quit();
+  DestroyAppWindows(app);
   SDL_Quit();
   SDL_LogInfo(0, "Application closed!");
 

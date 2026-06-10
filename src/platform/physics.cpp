@@ -1,4 +1,6 @@
 #include "platform/physics.hpp"
+#include "platform/profiler.hpp"
+#include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_log.h>
 #include <vector>
 
@@ -6,7 +8,7 @@ namespace Physics {
 namespace {
 constexpr bool kDebugDrawShapes = true;
 constexpr bool kDebugDrawJoints = false;
-constexpr bool kDebugDrawBounds = true;
+constexpr bool kDebugDrawBounds = false;
 
 // static PhysicsContext gCtx{
 //     .renderer = nullptr,
@@ -23,6 +25,25 @@ SDL_Color toSDLColor(b2HexColor color) {
   };
 }
 
+void DrawCenterMarker(SDL_Renderer *renderer, b2Vec2 center,
+                      SDL_Color markerColor) {
+  const float cx = toPixels(center.x);
+  const float cy = toPixels(center.y);
+  constexpr float halfSize = 6.0f;
+
+  SDL_Color previousColor;
+  SDL_GetRenderDrawColor(renderer, &previousColor.r, &previousColor.g,
+                         &previousColor.b, &previousColor.a);
+
+  SDL_SetRenderDrawColor(renderer, markerColor.r, markerColor.g, markerColor.b,
+                         markerColor.a);
+  SDL_RenderLine(renderer, cx - halfSize, cy, cx + halfSize, cy);
+  SDL_RenderLine(renderer, cx, cy - halfSize, cx, cy + halfSize);
+
+  SDL_SetRenderDrawColor(renderer, previousColor.r, previousColor.g,
+                         previousColor.b, previousColor.a);
+}
+
 void DebugDrawCircle(b2Vec2 center, float radius, b2HexColor color,
                      void *context) {
   auto *renderer = static_cast<SDL_Renderer *>(context);
@@ -31,6 +52,8 @@ void DebugDrawCircle(b2Vec2 center, float radius, b2HexColor color,
   }
 
   drawCircle(renderer, center, radius, toSDLColor(color));
+  DrawCenterMarker(renderer, center,
+                   SDL_Color{.r = 255, .g = 255, .b = 0, .a = 255});
 }
 
 void DebugDrawSolidCircle(b2Transform transform, float radius, b2HexColor color,
@@ -41,16 +64,20 @@ void DebugDrawSolidCircle(b2Transform transform, float radius, b2HexColor color,
   }
 
   drawCircle(renderer, transform.p, radius, toSDLColor(color));
+  DrawCenterMarker(renderer, transform.p,
+                   SDL_Color{.r = 255, .g = 255, .b = 0, .a = 255});
 }
 
 void DebugDrawPolygon(const b2Vec2 *vertices, int vertexCount, b2HexColor color,
                       void *context) {
   auto *renderer = static_cast<SDL_Renderer *>(context);
-  if (!renderer) {
+  if (!renderer || !vertices || vertexCount < 2) {
     return;
   }
 
   std::vector<SDL_FPoint> points;
+  points.reserve(static_cast<size_t>(vertexCount) + 1);
+
   for (int i = 0; i < vertexCount; i++) {
     auto *vertex = vertices + i;
     points.emplace_back(SDL_FPoint{
@@ -59,28 +86,41 @@ void DebugDrawPolygon(const b2Vec2 *vertices, int vertexCount, b2HexColor color,
     });
   }
 
-  if (vertexCount == 4) {
-    // NOTE: this is a rect and should be drawn like one
-    // top-left, top-right, bottom-right, bottom-left
-    SDL_FRect rect{
-        .x = points.at(0).x,
-        .y = points.at(0).y,
-        .w = points.at(2).x - points.at(0).x,
-        .h = points.at(2).y - points.at(0).y,
-    };
-    SDL_Color prevCol;
-    SDL_GetRenderDrawColor(renderer, &prevCol.r, &prevCol.g, &prevCol.b,
-                           &prevCol.a);
-    SDL_Color col = toSDLColor(color);
-    SDL_SetRenderDrawColor(renderer, col.r, col.g, col.b, col.a);
-    SDL_RenderRect(renderer, &rect);
-    SDL_SetRenderDrawColor(renderer, prevCol.r, prevCol.g, prevCol.b,
-                           prevCol.a);
+  // Close the loop by repeating the first point at the end.
+  points.push_back(points.front());
 
+  SDL_Color prevCol;
+  SDL_GetRenderDrawColor(renderer, &prevCol.r, &prevCol.g, &prevCol.b,
+                         &prevCol.a);
+  SDL_Color col = toSDLColor(color);
+  SDL_SetRenderDrawColor(renderer, col.r, col.g, col.b, col.a);
+
+  SDL_RenderLines(renderer, points.data(), static_cast<int>(points.size()));
+
+  SDL_SetRenderDrawColor(renderer, prevCol.r, prevCol.g, prevCol.b, prevCol.a);
+}
+
+void DebugDrawSolidPolygon(b2Transform transform, const b2Vec2 *vertices,
+                           int vertexCount, float radius, b2HexColor color,
+                           void *context) {
+  (void)radius;
+  auto *renderer = static_cast<SDL_Renderer *>(context);
+  if (!renderer || !vertices || vertexCount < 2) {
     return;
   }
 
-  SDL_RenderPoints(renderer, points.data(), vertexCount);
+  std::vector<b2Vec2> worldVertices;
+  worldVertices.reserve(static_cast<size_t>(vertexCount));
+  for (int i = 0; i < vertexCount; ++i) {
+    worldVertices.push_back(b2TransformPoint(transform, vertices[i]));
+  }
+
+  DebugDrawPolygon(worldVertices.data(), vertexCount, color, context);
+
+  // Draw the body origin (transform.p) so authored local vertices can be
+  // compared against the physics origin.
+  DrawCenterMarker(renderer, transform.p,
+                   SDL_Color{.r = 255, .g = 255, .b = 0, .a = 255});
 }
 
 #ifndef NDEBUG
@@ -150,6 +190,7 @@ void World::SetDebugRenderer(SDL_Renderer *renderer) {
   debugDraw.DrawCircleFcn = DebugDrawCircle;
   debugDraw.DrawSolidCircleFcn = DebugDrawSolidCircle;
   debugDraw.DrawPolygonFcn = DebugDrawPolygon;
+  debugDraw.DrawSolidPolygonFcn = DebugDrawSolidPolygon;
   debugDraw.DrawSegmentFcn = DebugDrawSegment;
   debugDraw.DrawPointFcn = DebugDrawPoint;
   debugDraw.drawShapes = kDebugDrawShapes;
@@ -185,17 +226,6 @@ void World::Simulate(float fixedDeltaTime) {
 void World::DebugDraw(float alpha) {
 #ifndef NDEBUG
   b2World_Draw(id, &debugDraw);
-
-  // auto *renderer = static_cast<SDL_Renderer *>(debugDraw.context);
-  // if (renderer) {
-  //   for (const auto &weakCollider : colliders) {
-  //     if (auto collider = weakCollider.lock()) {
-  //       if (auto *chain = dynamic_cast<ChainCollider *>(collider.get())) {
-  //         chain->debugDraw(renderer);
-  //       }
-  //     }
-  //   }
-  // }
 #endif
 }
 
@@ -206,10 +236,70 @@ void World::Destroy() {
   b2DestroyWorld(id);
 }
 
-BoxCollider::BoxCollider(const SDL_FRect &dimensions) {}
+PolygonCollider::PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos)
+    : Collider() {
+  createPolygon(meta, pos, toB2BodyType(BodyType::Static), 1.0f, false, false);
+}
+
+PolygonCollider::PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos,
+                                 BodyType type, float scale) {
+  createPolygon(meta, pos, toB2BodyType(type), scale, false, false);
+}
+
+PolygonCollider::PolygonCollider(const ColliderMeta &meta, SDL_FPoint pos,
+                                 BodyType type, float scale, bool invertY,
+                                 bool invertX)
+    : Collider() {
+  createPolygon(meta, pos, toB2BodyType(type), scale, invertX, invertY);
+}
+
+PolygonCollider::~PolygonCollider() { release(); }
+
+void PolygonCollider::createPolygon(const ColliderMeta &meta, SDL_FPoint pos,
+                                    b2BodyType type, float scale, bool invertX,
+                                    bool invertY) {
+  SDL_PROFILE_ZONE("Physics::PolygonCollider::Constructor");
+  b2BodyDef bodyDef = b2DefaultBodyDef();
+  bodyDef.name = meta.name.c_str();
+  bodyDef.userData = this;
+  bodyDef.type = type;
+  bodyDef.position = toB2Vec2(pos);
+  id = b2CreateBody(World::Id(), &bodyDef);
+
+  for (auto &polygonMeta : meta.polygons) {
+    std::vector<b2Vec2> scaledVertices{};
+    scaledVertices.reserve(polygonMeta.vertices.size());
+
+    for (auto &vert : polygonMeta.vertices) {
+      scaledVertices.emplace_back(b2Vec2{
+          .x = invertX ? -1 * vert.x * scale : vert.x * scale,
+          .y = invertY ? -1 * vert.y * scale : vert.y * scale,
+      });
+    }
+
+    b2Hull hull = b2ComputeHull(scaledVertices.data(), scaledVertices.size());
+    SDL_assert(hull.count > 0);
+    b2Polygon polygon = b2MakePolygon(&hull, 0);
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = meta.density;
+    shapeDef.material.friction = meta.friction;
+    shapeDef.material.restitution = meta.restitution;
+    shapeDef.material.rollingResistance = .1;
+    b2CreatePolygonShape(id, &shapeDef, &polygon);
+  }
+}
+
+void PolygonCollider::release() {
+  if (!B2_IS_NULL(id) && b2Body_IsValid(id)) {
+    b2DestroyBody(id);
+  }
+  id = b2_nullBodyId;
+}
+
+BoxCollider::BoxCollider(const SDL_FRect &dimensions) : Collider() {}
 
 ChainCollider::ChainCollider(const std::vector<SDL_FPoint> &points)
-    : _points({}), _authorPoints(points) {
+    : Collider(), _points({}), _authorPoints(points) {
   for (auto &pt : points) {
     _points.push_back(toB2Vec2(pt));
   }

@@ -1,4 +1,5 @@
 #include "platform/physics/parser.hpp"
+#include "platform/physics.hpp"
 #include "platform/profiler.hpp"
 #include <SDL3/SDL_assert.h>
 #include <SDL3/SDL_filesystem.h>
@@ -148,8 +149,10 @@ void XmlColliderParser::loadPolygons(ColliderMeta &meta,
       std::vector<b2Vec2> vertices{};
       for (int i = 0; i < p.size(); i += 2) {
         vertices.push_back({
-            .x = std::stof(trimString(p.at(i))),
-            .y = std::stof(trimString(p.at(i + 1))),
+            .x = toUnits(std::stof(trimString(p.at(i)))),
+            // NOTE: flip the y direction because in 2D, the positive y
+            // direction is down and negative y direction is up.
+            .y = -1 * toUnits(std::stof(trimString(p.at(i + 1)))),
         });
       }
 

@@ -31,6 +31,8 @@ private:
 
   void handleBtnHover();
   void _onEnter();
+  void _createPhysicsEntities();
+  void _resetPhysicsEntities();
 
   bool paused{false};
   bool gameOver{false};
@@ -50,5 +52,14 @@ private:
   PlayerLives lives;
   std::shared_ptr<Physics::CircleCollider> circle{nullptr};
   std::shared_ptr<Physics::ChainCollider> ramp{nullptr};
+
+  std::shared_ptr<Physics::PolygonCollider> leftSlingshot{nullptr};
+  std::shared_ptr<Physics::PolygonCollider> rightSlingshot{nullptr};
+
+  std::shared_ptr<Physics::PolygonCollider> leftFlipper{nullptr};
+  std::shared_ptr<Physics::PolygonCollider> rightFlipper{nullptr};
+
+  std::shared_ptr<Physics::PolygonCollider> leftWall{nullptr};
+  std::shared_ptr<Physics::PolygonCollider> rightWall{nullptr};
 };
 } // namespace Game
