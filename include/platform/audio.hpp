@@ -26,7 +26,6 @@ private:
   std::array<Voice, 8> voices{};
   int nextVoiceIndex{0};
 
-  int findIdleVoice() const;
   void destroyVoices();
 };
 

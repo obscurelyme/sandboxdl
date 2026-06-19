@@ -66,12 +66,9 @@ Sound::~Sound() {
 }
 
 void Sound::play() {
-  int voiceIndex = findIdleVoice();
-  if (voiceIndex < 0) {
-    // NOTE: all voices are taken, must wait. Maybe will implement voice
-    // stealing later.
-    return;
-  }
+  int voiceIndex = nextVoiceIndex;
+  nextVoiceIndex = (nextVoiceIndex + 1) % static_cast<int>(voices.size());
+
   SDL_AudioStream *stream = voices[voiceIndex].stream;
 
   if (!stream || !buffer || bufferSize == 0) {
@@ -82,6 +79,8 @@ void Sound::play() {
 
   if (SDL_GetAudioStreamQueued(stream) > 0) {
     if (!SDL_ClearAudioStream(stream)) {
+      SDL_LogWarn(0, "[Audio::Sound] Failed to clear stream for '%s': %s",
+                  name.c_str(), SDL_GetError());
     }
   }
 
@@ -98,21 +97,6 @@ void Sound::play() {
   }
 }
 
-int Sound::findIdleVoice() const {
-  for (int i = 0; i < 8; i++) {
-    SDL_AudioStream *stream = voices[i].stream;
-    if (!stream) {
-      continue;
-    }
-
-    if (SDL_GetAudioStreamQueued(stream) <= 0) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
 std::array<SDL_AudioStream *, Manager::MAX_ONE_SHOT_SOUNDS>
     Manager::audioStreams{};
 
@@ -127,7 +111,7 @@ void Manager::PlaySound(SDL_AudioStream *stream) {
 
 void Manager::Update() {
   for (int i = 0; i < MAX_ONE_SHOT_SOUNDS; i++) {
-    if (audioStreams[i] != nullptr &
+    if (audioStreams[i] != nullptr &&
         SDL_GetAudioStreamQueued(audioStreams[i]) <= 0) {
       SDL_DestroyAudioStream(audioStreams[i]);
       audioStreams[i] = nullptr;
